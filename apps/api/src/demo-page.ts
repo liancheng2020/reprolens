@@ -4,7 +4,7 @@ export function demoShopHtml(fixed = false): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ReproFlow Demo Shop</title>
+  <title>ReproLens Demo Shop</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Inter, ui-sans-serif, system-ui; color: #eef2ff; background: #070b13; }
@@ -41,7 +41,7 @@ export function demoShopHtml(fixed = false): string {
     <div class="cart">购物车 <span class="badge" id="cart-count">0</span></div>
   </header>
   <main>
-    <div class="eyebrow">ReproFlow 演示页面</div>
+    <div class="eyebrow">ReproLens 演示页面</div>
     <h1>为每天工作的人设计。</h1>
     <p class="sub">${fixed ? "这是修复后的演示页面：响应式布局、图片文本和购物车反馈均已恢复。" : "这是一个故意包含移动端溢出、可访问性和购物车接口错误的测试页面，用来体验完整复现流程。"}</p>
     <section class="product">

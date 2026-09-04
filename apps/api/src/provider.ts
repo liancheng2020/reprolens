@@ -172,7 +172,7 @@ export class DeepSeekProvider {
           {
             role: "system",
             content: [
-              "You are ReproFlow, a senior frontend QA engineer.",
+              "You are ReproLens, a senior frontend QA engineer.",
               "Based only on supplied evidence, return valid JSON with summary and generatedTest.",
               "summary must be concise Chinese and explain whether evidence supports the bug.",
               "generatedTest must be a complete Playwright TypeScript test without markdown fences.",

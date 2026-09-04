@@ -46,7 +46,7 @@ async function interactiveElements(page: Page): Promise<InteractiveElement[]> {
     const nodes = Array.from(document.querySelectorAll<HTMLElement>("button, input, textarea, select, a[href]"));
     return nodes.slice(0, 50).map((node, index) => {
       const id = `rf-${index + 1}`;
-      node.setAttribute("data-reproflow-id", id);
+      node.setAttribute("data-reprolens-id", id);
       const labelledBy = node.getAttribute("aria-labelledby");
       const linkedLabel = node.id ? document.querySelector(`label[for="${CSS.escape(node.id)}"]`)?.textContent : "";
       const ariaLabelledText = labelledBy ? document.getElementById(labelledBy)?.textContent : "";
@@ -69,7 +69,7 @@ async function executeActions(page: Page, actions: AgentAction[], callbacks: Sca
       if (action.type === "wait") {
         await page.waitForTimeout(Math.min(Number(action.value) || 500, 3000));
       } else if (action.targetId) {
-        const target = page.locator(`[data-reproflow-id="${action.targetId}"]`).first();
+        const target = page.locator(`[data-reprolens-id="${action.targetId}"]`).first();
         if (action.type === "fill") await target.fill(action.value ?? "");
         if (action.type === "click") await target.click({ timeout: 5000 });
       }

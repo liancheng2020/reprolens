@@ -1,8 +1,8 @@
-# ReproFlow AI
+# ReproLens
 
 > Turn vague bug reports into reproducible visual evidence and regression tests.
 
-ReproFlow AI 是一个面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现 Agent。输入目标页面、问题描述和期望结果，它会操作真实 Chromium，在多种设备尺寸下采集截图、DOM 指标、Console 与 Network 证据，最后交付结构化报告和 Playwright 回归测试。
+ReproLens 是一个面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现与修复验证工具。输入目标页面、问题描述和期望结果，它会操作真实 Chromium，在多种设备尺寸下采集截图、DOM 指标、Console 与 Network 证据，最后交付结构化报告、像素 Diff 和 Playwright 回归测试。
 
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-5FA04E)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-visual_dashboard-61DAFB)](https://react.dev/)
@@ -76,7 +76,7 @@ AI Provider   DeepSeek
 ### Windows PowerShell
 
 ```powershell
-cd E:\ReproFlow-AI
+cd E:\reprolens
 npm install
 npm run browser:install
 Copy-Item .env.example .env
@@ -97,7 +97,7 @@ npm run dev
 ### macOS / Linux
 
 ```bash
-cd /path/to/ReproFlow-AI
+cd /path/to/reprolens
 npm install
 npm run browser:install
 cp .env.example .env
@@ -138,7 +138,7 @@ npm start
 ## 项目结构
 
 ```text
-ReproFlow-AI/
+reprolens/
 ├─ apps/
 │  ├─ api/
 │  │  ├─ src/

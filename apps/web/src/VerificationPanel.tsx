@@ -59,7 +59,7 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
         <div>
           <span className="section-kicker">FIX VERIFICATION · PHASE 2</span>
           <h3>{verification ? "Before / After 修复验证" : "用当前运行创建修复基线"}</h3>
-          <p>{verification?.summary ?? "修复完成后输入新地址，ReproFlow 会重放相同路径并生成逐像素证据。"}</p>
+          <p>{verification?.summary ?? "修复完成后输入新地址，ReproLens 会重放相同路径并生成逐像素证据。"}</p>
         </div>
         {verification && (() => {
           const StatusIcon = statusCopy[verification.status].icon;

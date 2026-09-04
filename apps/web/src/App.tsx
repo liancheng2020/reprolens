@@ -68,7 +68,7 @@ function Logo() {
   return (
     <div className="logo">
       <span className="logo-mark"><CircleDot size={20} /></span>
-      <span>ReproFlow <b>AI</b></span>
+      <span>Repro<b>Lens</b></span>
     </div>
   );
 }
@@ -91,7 +91,7 @@ function Shell({ children, onHome, onHistory, config }: { children: ReactNode; o
             <span>{config?.provider === "deepseek" ? "DeepSeek" : "Fallback"}</span>
           </div>
         </div>
-        <a className="github-link" href="https://github.com/liancheng2020/reproflow-ai" target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub <ArrowUpRight size={14} /></a>
+        <a className="github-link" href="https://github.com/liancheng2020/reprolens" target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub <ArrowUpRight size={14} /></a>
       </aside>
       <main className="main-shell">{children}</main>
     </div>
@@ -172,7 +172,7 @@ function Dashboard({
           <div className="hero-copy">
             <div className="eyebrow"><Sparkles size={15} /> Browser QA Agent</div>
             <h2>从一句问题描述，<br /><span>抵达可复现的真相。</span></h2>
-            <p>ReproFlow 自动理解问题、操作真实浏览器、跨设备采集证据，并生成可提交的 Playwright 回归测试。</p>
+            <p>ReproLens 自动理解问题、操作真实浏览器、跨设备采集证据，并生成可提交的 Playwright 回归测试。</p>
             <div className="hero-proof">
               <span><ShieldCheck size={17} /> 受限动作</span>
               <span><Eye size={17} /> 全程可见</span>
@@ -425,7 +425,7 @@ export default function App() {
 
   const sortedRuns = useMemo(() => [...runs].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [runs]);
 
-  if (loading) return <div className="splash"><Logo /><LoaderCircle className="spin" size={24} /><span>正在连接 ReproFlow...</span></div>;
+  if (loading) return <div className="splash"><Logo /><LoaderCircle className="spin" size={24} /><span>正在连接 ReproLens...</span></div>;
 
   return (
     <Shell onHome={() => setSelected(undefined)} onHistory={() => setSelected(sortedRuns[0])} config={config}>

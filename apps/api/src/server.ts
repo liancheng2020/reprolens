@@ -34,7 +34,7 @@ app.use("/artifacts", express.static(config.artifactsDir, { fallthrough: false, 
 app.get("/health", (_request, response) => {
   response.json({
     status: "ok",
-    service: "reproflow-api",
+    service: "reprolens-api",
     provider: manager.providerConfigured ? "deepseek" : "deterministic",
     model: manager.providerConfigured ? config.deepseekModel : null
   });
@@ -141,12 +141,12 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
     return;
   }
   const message = error instanceof Error ? error.message : "Unexpected server error";
-  console.error(`[reproflow] ${message}`);
+  console.error(`[reprolens] ${message}`);
   response.status(500).json({ error: "服务内部错误", message });
 });
 
 const server = app.listen(config.port, "127.0.0.1", () => {
-  console.log(`ReproFlow API running at http://127.0.0.1:${config.port}`);
+  console.log(`ReproLens API running at http://127.0.0.1:${config.port}`);
   console.log(`Provider: ${manager.providerConfigured ? `${config.deepseekModel} (DeepSeek)` : "deterministic fallback"}`);
 });
 

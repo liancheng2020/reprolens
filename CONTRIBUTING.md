@@ -1,6 +1,6 @@
 # Contributing
 
-感谢你关注 ReproFlow AI。
+感谢你关注 ReproLens。
 
 ## 本地开发
 
