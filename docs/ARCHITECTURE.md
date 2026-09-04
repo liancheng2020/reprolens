@@ -43,7 +43,7 @@ Browser Scanner
 
 ### Browser Scanner
 
-为每个设备创建隔离 BrowserContext，收集 Console、Page Error、HTTP 失败请求、DOM 尺寸和截图。第一版顺序执行设备，方便控制资源占用和保持时间线可读。
+为每个设备创建隔离 BrowserContext，收集 Console、Page Error、HTTP 失败请求、DOM 尺寸和截图。当前采用顺序执行，方便控制资源占用并保持时间线可读；并发执行将在有明确性能需求时独立演进。
 
 ### Deterministic Analyzer
 
@@ -85,7 +85,7 @@ Browser Scanner
 - 完整 DOM 不会发送给外部模型。
 - 错误响应不会输出 API Key。
 
-V1 允许访问 localhost，方便测试本地项目。因此它是本地开发工具，不是可直接暴露公网的多租户服务。公网部署前必须补充身份认证、DNS/IP 重绑定防护、私网地址阻断、URL allowlist、任务配额和容器级隔离。
+当前本地运行模式允许访问 localhost，方便测试本地项目。因此它不是可直接暴露公网的多租户服务。公网部署前必须补充身份认证、DNS/IP 重绑定防护、私网地址阻断、URL allowlist、任务配额和容器级隔离。
 
 ## 扩展点
 

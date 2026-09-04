@@ -1,6 +1,6 @@
 # Security Policy
 
-ReproLens V1 设计为本机开发工具。
+ReproLens 当前设计为本机和可信内网环境中的开发工具。
 
 请不要把未经保护的 API 服务直接暴露到公网。当前版本为了扫描本地项目而允许 localhost 和私网地址。多用户部署必须先增加身份认证、网络出口控制、URL allowlist、请求配额和浏览器容器隔离。
 

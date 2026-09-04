@@ -1,6 +1,6 @@
 # ReproLens
 
-> Turn vague bug reports into reproducible visual evidence and regression tests.
+> 将模糊的 Web Bug 报告转化为可复现证据、像素 Diff 和回归测试。
 
 ReproLens 是一个面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现与修复验证工具。输入目标页面、问题描述和期望结果，它会操作真实 Chromium，在多种设备尺寸下采集截图、DOM 指标、Console 与 Network 证据，最后交付结构化报告、像素 Diff 和 Playwright 回归测试。
 
@@ -9,7 +9,11 @@ ReproLens 是一个面向前端开发者、测试工程师和开源维护者的�
 [![Playwright](https://img.shields.io/badge/Playwright-browser_worker-2EAD33)](https://playwright.dev/)
 [![License](https://img.shields.io/badge/license-MIT-8CF7C7)](LICENSE)
 
-## 第一版已经实现
+## 当前版本：v0.2.0
+
+ReproLens 是一个可独立安装、运行和演示的开源项目，完整包含前端工作台、API、浏览器执行器、持久化和内置 Demo。项目采用需求驱动的小步迭代：每个版本聚焦一个可验收的用户闭环，并同步交付代码、测试和文档。
+
+### v0.1.0 — 核心复现闭环
 
 - 可视化任务创建：输入 URL、Bug 描述、期望结果和测试设备。
 - 多设备真实复现：Desktop、iPhone 13、Pixel 7。
@@ -24,7 +28,7 @@ ReproLens 是一个面向前端开发者、测试工程师和开源维护者的�
 - 无 Key 降级：DeepSeek 不可用时自动使用本地确定性规则。
 - 内置故障商城：安装后无需准备其他项目即可体验完整闭环。
 
-## 第二阶段：修复验证闭环
+### v0.2.0 — 修复验证闭环
 
 - 任意已完成任务都可以一键设为基线，并对修复后的 URL 重放相同操作和设备矩阵。
 - 每个设备生成 Before、After、Pixel Diff 三联证据，不依赖模型判断像素变化。
@@ -208,25 +212,23 @@ npm run check
 
 该命令执行单元测试、API TypeScript 构建和 React 生产构建。
 
-## V1 安全边界
+## 安全边界
 
 当前版本面向本机和可信内网开发环境。它允许访问用户输入的 HTTP/HTTPS 地址，方便验证 localhost 项目。不要在没有身份认证、URL allowlist、私网地址限制和任务配额的情况下直接暴露到公网。
 
 `.env`、运行数据和截图均已加入 `.gitignore`，真实 API Key 不会进入 Git 提交。
 
-## Roadmap
+## 迭代路线
 
-- [x] 可视化工作台与实时 Agent 时间线
-- [x] 多设备 Playwright 复现
-- [x] DeepSeek + 确定性降级
-- [x] Evidence-based Playwright 测试
-- [x] Before / After 修复验证
-- [x] 截图基线和像素 Diff
-- [ ] GitHub App 与 Issue 标签触发
-- [ ] GitHub Checks 证据报告
-- [ ] 自动创建测试 PR
-- [ ] axe-core 完整可访问性扫描
-- [ ] Docker Worker 与并发任务队列
+| 版本 | 用户闭环 | 状态 |
+|---|---|---|
+| v0.1.0 | 从 Bug 描述到浏览器证据和回归测试 | 已完成 |
+| v0.2.0 | 从故障基线到修复验证和像素 Diff | 当前版本 |
+| v0.3.0 | 从 GitHub Issue 到 Checks 证据报告 | 规划中 |
+| v0.4.0 | 更完整的可访问性与页面质量分析 | 候选 |
+| v0.5.0 | Docker Worker 与并发任务队列 | 候选 |
+
+版本范围会根据真实使用需求调整；未进入当前版本的能力不会提前堆入主流程。
 
 ## License
 

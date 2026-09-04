@@ -57,7 +57,7 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
     <section className="verification-panel panel">
       <div className="verification-heading">
         <div>
-          <span className="section-kicker">FIX VERIFICATION · PHASE 2</span>
+          <span className="section-kicker">FIX VERIFICATION</span>
           <h3>{verification ? "Before / After 修复验证" : "用当前运行创建修复基线"}</h3>
           <p>{verification?.summary ?? "修复完成后输入新地址，ReproLens 会重放相同路径并生成逐像素证据。"}</p>
         </div>
