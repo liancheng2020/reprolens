@@ -4,7 +4,7 @@
 
 ```text
 React Dashboard
-  │ POST /api/runs
+  │ POST /api/runs 或 /api/github/issues/import
   │ GET  /api/runs/:id/events
   ▼
 Run Manager ───────────────► JSON Run Store
@@ -20,6 +20,9 @@ Browser Scanner
           │
           ▼
   Evidence + Regression Test
+          │
+          ▼
+ GitHub Check + Issue Report + Actions Artifact
 ```
 
 ## 模块职责
@@ -59,6 +62,19 @@ Browser Scanner
 
 `visual-diff.ts` 只负责图片 I/O：读取同设备的两张 PNG，在页面高度不同的情况下归一化到白色画布，调用 Pixelmatch 生成差异图并返回变化像素数。运行编排仍由 Run Manager 负责，模块之间不共享可变状态。
 
+### GitHub Integration
+
+GitHub 集成位于 `apps/api/src/github`，是围绕现有 Run Manager 的适配层：
+
+- `client.ts`：封装 Issues、Contents、Commits、Comments 和 Checks REST API，支持注入 fetch 测试。
+- `issue-parser.ts`：解析 Issue URL、Markdown 字段和 `.github/reprolens.yml`，输出标准 `CreateRunInput`。
+- `service.ts`：按仓库、Issue 与 commit SHA 幂等编排任务，等待结果并持久化发布状态。
+- `publisher.ts`：生成纯 Markdown 报告、映射 Check 结论并 upsert Issue 评论。
+- `webhook.ts`：对原始请求体执行 HMAC-SHA256 验签，只接受 Issue labeled 事件。
+- `routes.ts`：提供导入、发布、状态和可选 Webhook HTTP 接口。
+
+`github-runner.ts` 是无服务部署入口。GitHub Actions 调用它后复用同一个 GitHubService 和 Run Manager，最终输出报告、JSON 和测试文件。平台事件不会直接调用扫描器，后续替换 GitHub 为 GitLab 时也无需改变核心执行链。
+
 ## 数据结构
 
 每个 Run 包含：
@@ -72,6 +88,7 @@ Browser Scanner
 - 可选的 baselineRunId 和 VerificationResult
 - verdict、confidence、score、summary
 - generatedTest
+- 可选 GitHub source：repository、issue、commit SHA、触发来源、Check、评论和发布状态
 
 持久化位置为 `data/runs/{runId}.json`，截图位于 `artifacts/{runId}`。两个目录都不会进入 Git。
 
@@ -84,6 +101,10 @@ Browser Scanner
 - API Key 只从被忽略的 `.env` 读取。
 - 完整 DOM 不会发送给外部模型。
 - 错误响应不会输出 API Key。
+- GitHub Token 与 Webhook Secret 只从环境变量读取，前端只能看到是否已配置。
+- Webhook 使用 `X-Hub-Signature-256` 和常量时间比较校验原始 UTF-8 请求体。
+- GitHub Actions 权限显式限制为 contents 只读、issues 与 checks 写入。
+- Issue + commit SHA 形成幂等键，报告评论使用固定隐藏标记更新。
 
 当前本地运行模式允许访问 localhost，方便测试本地项目。因此它不是可直接暴露公网的多租户服务。公网部署前必须补充身份认证、DNS/IP 重绑定防护、私网地址阻断、URL allowlist、任务配额和容器级隔离。
 
@@ -93,5 +114,5 @@ Browser Scanner
 - Analyzer：增加 axe-core 和 Web Vitals。
 - Store：从 JSON 切换 PostgreSQL 和对象存储。
 - Queue：从进程内任务切换 Redis/BullMQ。
-- Trigger：增加 GitHub App、Issue label、PR check_suite。
+- Trigger：增加 GitHub App 安装流程和 PR check_suite。
 - Worker：把 Browser Scanner 放入一次性 Docker 容器。

@@ -1,0 +1,8 @@
+triggerLabel: needs-reproduction
+devices:
+  - desktop
+  - iphone13
+  - pixel7
+publish:
+  issueComment: true
+  checkRun: true

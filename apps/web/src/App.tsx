@@ -31,6 +31,8 @@ import {
   Wifi
 } from "lucide-react";
 import { api } from "./api";
+import { GitHubImport } from "./GitHubImport";
+import { GitHubSourceCard } from "./GitHubSourceCard";
 import type { AppConfig, CreateRunInput, DeviceName, Finding, ReproRun } from "./types";
 import { VerificationPanel } from "./VerificationPanel";
 
@@ -196,6 +198,8 @@ function Dashboard({
           <article className="stat-card"><div className="stat-icon purple"><Bot size={19} /></div><div><span>推理引擎</span><strong className="engine-name">{config?.provider === "deepseek" ? "DeepSeek" : "Rules"}</strong></div><small>{config?.model ?? "deterministic"}</small></article>
         </section>
 
+        <GitHubImport config={config} onImported={onCreated} />
+
         <section className="workspace-grid">
           <form className="run-form panel" onSubmit={submit}>
             <div className="panel-heading">
@@ -279,7 +283,7 @@ function FindingCard({ finding }: { finding: Finding }) {
   );
 }
 
-function RunDetail({ run, onBack, onRefresh, onVerify }: { run: ReproRun; onBack: () => void; onRefresh: () => void; onVerify: (url: string) => Promise<void> }) {
+function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { run: ReproRun; config?: AppConfig; onBack: () => void; onRefresh: () => void; onVerify: (url: string) => Promise<void>; onPublish: () => Promise<void> }) {
   const [activeDevice, setActiveDevice] = useState<DeviceName>(run.screenshots[0]?.device ?? run.input.devices[0]);
   const [copied, setCopied] = useState(false);
   const screenshot = run.screenshots.find((item) => item.device === activeDevice) ?? run.screenshots.at(-1);
@@ -323,6 +327,8 @@ function RunDetail({ run, onBack, onRefresh, onVerify }: { run: ReproRun; onBack
           </div>
           <ScoreRing score={run.score} />
         </section>
+
+        <GitHubSourceCard run={run} canPublish={Boolean(config?.github.configured)} onPublish={onPublish} />
 
         <VerificationPanel run={run} activeDevice={activeDevice} onVerify={onVerify} />
 
@@ -432,10 +438,16 @@ export default function App() {
       {selected ? (
         <RunDetail
           run={selected}
+          config={config}
           onBack={() => setSelected(undefined)}
           onRefresh={() => void api.run(selected.id).then(setSelected)}
           onVerify={async (url) => {
             const next = await api.verifyRun(selected.id, url);
+            setRuns((current) => [next, ...current.filter((item) => item.id !== next.id)]);
+            setSelected(next);
+          }}
+          onPublish={async () => {
+            const next = await api.publishGitHubRun(selected.id);
             setRuns((current) => [next, ...current.filter((item) => item.id !== next.id)]);
             setSelected(next);
           }}

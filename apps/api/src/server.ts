@@ -5,6 +5,8 @@ import express from "express";
 import { z } from "zod";
 import { config, projectRoot } from "./config.js";
 import { demoShopHtml } from "./demo-page.js";
+import { createGitHubRouter, type RawBodyRequest } from "./github/routes.js";
+import { GitHubService } from "./github/service.js";
 import { RunInputError, RunManager } from "./run-manager.js";
 import { RunStore } from "./store.js";
 
@@ -24,12 +26,19 @@ const verifyRunSchema = z.object({
 const store = new RunStore();
 await store.init();
 const manager = new RunManager(store);
+const github = new GitHubService(store, manager);
 const app = express();
 
 app.disable("x-powered-by");
 app.use(cors({ origin: config.webOrigin }));
-app.use(express.json({ limit: "256kb" }));
+app.use(express.json({
+  limit: "256kb",
+  verify: (request, _response, buffer) => {
+    (request as RawBodyRequest).rawBody = Buffer.from(buffer);
+  }
+}));
 app.use("/artifacts", express.static(config.artifactsDir, { fallthrough: false, maxAge: "1h" }));
+app.use("/api/github", createGitHubRouter(github));
 
 app.get("/health", (_request, response) => {
   response.json({
@@ -44,7 +53,12 @@ app.get("/api/config", (_request, response) => {
   response.json({
     provider: manager.providerConfigured ? "deepseek" : "deterministic",
     model: manager.providerConfigured ? config.deepseekModel : null,
-    demoUrl: `http://127.0.0.1:${config.port}/demo/shop`
+    demoUrl: `http://127.0.0.1:${config.port}/demo/shop`,
+    github: {
+      configured: github.configured,
+      triggerLabel: config.githubTriggerLabel,
+      webhookConfigured: Boolean(config.githubWebhookSecret)
+    }
   });
 });
 

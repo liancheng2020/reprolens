@@ -1,5 +1,5 @@
 name: Bug report
-description: 提交一个可以被 ReproFlow 复现的问题
+description: 提交一个可以被 ReproLens 自动验证的问题
 title: '[Bug] '
 labels: [bug, needs-reproduction]
 body:

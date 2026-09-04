@@ -60,7 +60,7 @@ ReproLens 的前端工作台、API、浏览器执行器、持久化、测试和�
 
 ## v0.2.0 — 修复验证闭环
 
-当前版本在核心复现能力上增加“验证修复是否有效”的完整闭环。
+该版本在核心复现能力上增加“验证修复是否有效”的完整闭环。
 
 ### 用户路径
 
@@ -83,6 +83,38 @@ ReproLens 的前端工作台、API、浏览器执行器、持久化、测试和�
 - 基线缺失、未完成或缺少目标设备截图时，API 返回明确的 4xx 错误。
 - 内置 Demo 可以在本机完整演示故障版到修复版的闭环。
 - 前端在桌面和移动尺寸下均可查看三联证据。
+
+## v0.3.0 — GitHub 协作闭环
+
+当前版本把 ReproLens 从本地验证工具延伸到开源仓库和研发协作流程，但 GitHub 适配层不直接依赖 Browser Scanner、Analyzer 或 Visual Diff 的内部实现。
+
+### 用户路径
+
+1. 维护者按 Issue 模板收集 Target URL、问题、期望结果和测试设备。
+2. 添加 `needs-reproduction` 标签，或在工作台粘贴 Issue URL。
+3. GitHub Actions 或本地服务读取 Issue 和仓库配置，并基于 Issue 与当前提交创建幂等任务。
+4. 任务执行期间创建进行中的 Check Run；UI 同步展示仓库、Issue、提交和发布状态。
+5. 扫描完成后将结论、评分、发现和证据清单写入 GitHub Check 与 Issue 评论。
+6. 截图、Pixel Diff、Run JSON、Markdown 报告和 Playwright 测试作为 Actions Artifact 下载。
+7. 维护者可安全重试；ReproLens 更新原评论和 Check，不制造重复消息。
+
+### 界面增量
+
+- 首页增加 GitHub Issue 导入面板，明确展示 Token 配置状态与工作流能力。
+- 运行详情增加 GitHub Context 卡片，展示仓库、Issue、提交 SHA、同步结果与外链。
+- 已完成任务支持手动发布或重新发布，用于权限恢复和失败重试。
+
+### 验收标准
+
+- Fork 仓库后，只需开启 Actions 权限即可对公开页面执行确定性验证。
+- 同一个 Issue、同一个提交在重复事件下只对应一个运行任务。
+- 标签触发、手动 workflow_dispatch 和 Web UI 导入共用同一解析与执行逻辑。
+- Issue 评论通过隐藏标记 upsert，不因重试重复刷屏。
+- Check Run 与 ReproLens 最终状态保持一致，报告包含可定位的证据摘要。
+- GitHub Token 与 Webhook Secret 只从环境变量读取，API 配置响应和日志不包含凭据。
+- Webhook 使用原始请求体和 HMAC-SHA256 校验，无效签名返回 403。
+- 不配置 DeepSeek Key 时 GitHub 工作流仍能完成扫描和报告。
+- GitHub 集成测试可独立运行，不修改扫描器、分析器和 Diff 引擎。
 
 ## 后续迭代候选
 

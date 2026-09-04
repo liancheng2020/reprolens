@@ -6,7 +6,7 @@ import { BrowserScanner } from "./scanner.js";
 import { RunStore } from "./store.js";
 import { buildVerification } from "./verification.js";
 import { VisualDiffService } from "./visual-diff.js";
-import type { CreateRunInput, Finding, ReproRun, ScreenshotArtifact, TimelineItem } from "./types.js";
+import type { CreateRunInput, Finding, GitHubRunSource, ReproRun, ScreenshotArtifact, TimelineItem } from "./types.js";
 
 export class RunInputError extends Error {}
 
@@ -22,7 +22,7 @@ export class RunManager {
     return this.provider.configured;
   }
 
-  async create(input: CreateRunInput): Promise<ReproRun> {
+  async create(input: CreateRunInput, source?: GitHubRunSource): Promise<ReproRun> {
     if (input.baselineRunId) await this.validateBaseline(input);
     const now = new Date().toISOString();
     const run: ReproRun = {
@@ -42,7 +42,8 @@ export class RunManager {
         networkErrors: 0,
         accessibilityIssues: 0,
         testedDevices: input.devices.length
-      }
+      },
+      source
     };
     await this.store.save(run);
     setImmediate(() => void this.execute(run.id));

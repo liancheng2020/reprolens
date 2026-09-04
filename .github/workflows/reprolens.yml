@@ -1,0 +1,50 @@
+name: ReproLens Issue verification
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: GitHub Issue number
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+  checks: write
+
+concurrency:
+  group: reprolens-${{ github.repository }}-${{ inputs.issue_number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'needs-reproduction'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      REPROLENS_ISSUE_NUMBER: ${{ inputs.issue_number || github.event.issue.number }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      HEADLESS: "true"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify issue and publish report
+        run: npm run github:run
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reprolens-evidence-${{ github.run_id }}
+          if-no-files-found: warn
+          path: |
+            reports/github
+            artifacts
+            data/runs

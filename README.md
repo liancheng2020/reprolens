@@ -9,7 +9,7 @@ ReproLens 是一个面向前端开发者、测试工程师和开源维护者的�
 [![Playwright](https://img.shields.io/badge/Playwright-browser_worker-2EAD33)](https://playwright.dev/)
 [![License](https://img.shields.io/badge/license-MIT-8CF7C7)](LICENSE)
 
-## 当前版本：v0.2.0
+## 当前版本：v0.3.0
 
 ReproLens 是一个可独立安装、运行和演示的开源项目，完整包含前端工作台、API、浏览器执行器、持久化和内置 Demo。项目采用需求驱动的小步迭代：每个版本聚焦一个可验收的用户闭环，并同步交付代码、测试和文档。
 
@@ -37,6 +37,19 @@ ReproLens 是一个可独立安装、运行和演示的开源项目，完整包�
 - 内置 Demo 自动预填修复版地址 `/demo/shop?fixed=1`，无需准备两个外部项目即可演示。
 
 最短体验路径：先运行首页预填的故障 Demo；任务完成后点击“验证修复”，系统会自动重放修复版并展示三联对比。
+
+### v0.3.0 — GitHub 协作闭环
+
+- 在可视化工作台粘贴 GitHub Issue URL，自动读取仓库、标题、正文、目标地址、期望结果和设备。
+- 支持通过 `needs-reproduction` 标签或手动执行 GitHub Actions 发起验证，无需部署公网服务。
+- 以 repository、issue、commit 作为幂等键，重复事件不会创建重复任务。
+- 创建独立 GitHub Check Run，执行时显示进行中，完成后回写 success、failure 或 neutral。
+- 在 Issue 中创建结构化证据报告；再次发布会更新同一条评论，不会重复刷屏。
+- 运行详情展示 Issue、提交、同步状态、Check 链接和重新发布入口。
+- Actions Artifacts 交付截图、Pixel Diff、完整 Run JSON、Markdown 报告和 Playwright 测试。
+- 提供 HMAC-SHA256 Webhook 校验，可选接入自托管服务。
+
+最短 GitHub 路径：在仓库 Issue 中填写 Target URL、Problem、Expected behavior 和 Device，添加 `needs-reproduction` 标签，Actions 会执行扫描并把报告同步回 Issue。
 
 ## 一次运行会发生什么
 
@@ -121,6 +134,36 @@ npm run dev
 
 打开 [http://localhost:5173](http://localhost:5173)，首页已经预填内置 Demo，直接点击“启动可视化复现”。
 
+## GitHub Actions 集成
+
+仓库已包含 [`.github/reprolens.yml`](.github/reprolens.yml) 和 [`.github/workflows/reprolens.yml`](.github/workflows/reprolens.yml)。Fork 后默认可用：
+
+1. 在仓库 Settings → Actions → General 中允许工作流读写仓库。
+2. 如果需要 DeepSeek，在 Settings → Secrets and variables → Actions 新建 `DEEPSEEK_API_KEY`；不配置时使用本地确定性规则。
+3. 创建 Issue，并按模板填写可访问的 Target URL。
+4. 添加 `needs-reproduction` 标签，或在 Actions 页面手动运行工作流并填写 Issue 编号。
+5. 在 Issue 评论、Checks 和 Actions Artifacts 中查看结果。
+
+仓库级配置：
+
+```yaml
+triggerLabel: needs-reproduction
+devices: [desktop, iphone13, pixel7]
+publish:
+  issueComment: true
+  checkRun: true
+```
+
+如果页面地址固定，也可在配置中增加 `targetUrl`。工作流仅声明 `contents: read`、`issues: write` 和 `checks: write` 权限；`GITHUB_TOKEN` 只用于当前仓库。
+
+本地工作台导入私有 Issue 或回写结果时，在 `.env` 配置：
+
+```dotenv
+REPROLENS_GITHUB_TOKEN=github-token
+```
+
+可选 Webhook 模式还需配置 `REPROLENS_GITHUB_WEBHOOK_SECRET`，并把 GitHub Webhook 地址设为 `/api/github/webhook`。公开 Issue 即使不配置 Token 也可手动导入，但不能发布评论或 Check。
+
 ## 生产模式
 
 Windows PowerShell：
@@ -153,12 +196,16 @@ reprolens/
 │  │  │  ├─ analyzer.ts       确定性证据分析和评分
 │  │  │  ├─ verification.ts   修复效果判定
 │  │  │  ├─ visual-diff.ts    PNG 归一化与像素 Diff
+│  │  │  ├─ github/           Issue 解析、API 客户端、Webhook 与报告发布
+│  │  │  ├─ github-runner.ts  GitHub Actions 任务入口
 │  │  │  ├─ store.ts          JSON 持久化
 │  │  │  └─ demo-page.ts      自带故障演示商城
 │  │  └─ tests/
 │  └─ web/
 │     └─ src/
 │        ├─ App.tsx            工作台、运行详情和证据面板
+│        ├─ GitHubImport.tsx   Issue 导入面板
+│        ├─ GitHubSourceCard.tsx GitHub 同步状态卡片
 │        ├─ api.ts             API 与 SSE 客户端
 │        └─ styles.css         响应式视觉系统
 ├─ artifacts/                  运行截图，Git 忽略
@@ -179,6 +226,10 @@ reprolens/
 | POST | `/api/runs/:id/verify` | 以历史任务为基线验证修复 |
 | GET | `/api/runs/:id` | 查询单次运行 |
 | GET | `/api/runs/:id/events` | SSE 实时事件流 |
+| GET | `/api/github/status` | GitHub 集成状态，不返回 Token |
+| POST | `/api/github/issues/import` | 从 Issue 创建或复用任务 |
+| POST | `/api/github/runs/:id/publish` | 发布或更新 Issue 报告与 Check |
+| POST | `/api/github/webhook` | 接收带签名的 Issue 标签事件 |
 | GET | `/artifacts/:run/:file` | 截图证据 |
 | GET | `/demo/shop` | 内置故障页面 |
 | GET | `/demo/shop?fixed=1` | 内置修复后页面 |
@@ -202,7 +253,7 @@ reprolens/
 4. Graceful fallback：模型故障不能让基础检测失效。
 5. Deliver artifacts：最终交付截图、报告和可执行测试，而不是聊天文字。
 
-更多实现说明见 [架构文档](docs/ARCHITECTURE.md)。
+更多说明见 [版本说明](docs/VERSIONS.md)、[产品设计](docs/PRODUCT_SPEC.md) 和 [架构文档](docs/ARCHITECTURE.md)。
 
 ## 验证
 
@@ -223,8 +274,8 @@ npm run check
 | 版本 | 用户闭环 | 状态 |
 |---|---|---|
 | v0.1.0 | 从 Bug 描述到浏览器证据和回归测试 | 已完成 |
-| v0.2.0 | 从故障基线到修复验证和像素 Diff | 当前版本 |
-| v0.3.0 | 从 GitHub Issue 到 Checks 证据报告 | 规划中 |
+| v0.2.0 | 从故障基线到修复验证和像素 Diff | 已完成 |
+| v0.3.0 | 从 GitHub Issue 到 Checks 证据报告 | 当前版本 |
 | v0.4.0 | 更完整的可访问性与页面质量分析 | 候选 |
 | v0.5.0 | Docker Worker 与并发任务队列 | 候选 |
 

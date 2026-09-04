@@ -3,6 +3,23 @@ export type DeviceName = "desktop" | "iphone13" | "pixel7";
 export type Severity = "high" | "medium" | "low";
 export type FindingCategory = "functional" | "visual" | "accessibility" | "console" | "network";
 export type VerificationStatus = "improved" | "regressed" | "changed" | "unchanged";
+export type GitHubPublishStatus = "pending" | "publishing" | "published" | "failed";
+
+export interface GitHubRunSource {
+  type: "github";
+  repository: string;
+  issueNumber: number;
+  issueUrl: string;
+  issueTitle: string;
+  headSha: string;
+  trigger: "manual" | "label" | "action";
+  publishStatus: GitHubPublishStatus;
+  checkRunId?: number;
+  checkUrl?: string;
+  commentId?: number;
+  publishedAt?: string;
+  publishError?: string;
+}
 
 export interface CreateRunInput {
   url: string;
@@ -98,6 +115,7 @@ export interface ReproRun {
   verification?: VerificationResult;
   generatedTest?: string;
   metrics: RunMetrics;
+  source?: GitHubRunSource;
   error?: string;
 }
 

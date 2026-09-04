@@ -1,11 +1,12 @@
 {
   "name": "@reprolens/api",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
+    "github:run": "tsx src/github-runner.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
@@ -17,6 +18,7 @@
     "pixelmatch": "^7.2.0",
     "playwright": "^1.62.1",
     "pngjs": "^7.0.0",
+    "yaml": "^2.9.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {

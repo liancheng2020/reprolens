@@ -14,6 +14,9 @@ export const config = {
   deepseekApiKey: process.env.DEEPSEEK_API_KEY?.trim() ?? "",
   deepseekBaseUrl: process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com",
   deepseekModel: process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
+  githubToken: (process.env.REPROLENS_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN ?? "").trim(),
+  githubWebhookSecret: (process.env.REPROLENS_GITHUB_WEBHOOK_SECRET ?? "").trim(),
+  githubTriggerLabel: process.env.REPROLENS_GITHUB_TRIGGER_LABEL ?? "needs-reproduction",
   artifactsDir: path.join(projectRoot, "artifacts"),
   dataDir: path.join(projectRoot, "data", "runs")
 };

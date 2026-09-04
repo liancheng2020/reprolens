@@ -21,6 +21,14 @@ export const api = {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url })
   }),
+  importGitHubIssue: (issueUrl: string) => request<{ run: ReproRun; created: boolean }>("/api/github/issues/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ issueUrl })
+  }),
+  publishGitHubRun: (id: string) => request<ReproRun>(`/api/github/runs/${id}/publish`, {
+    method: "POST"
+  }),
   subscribe(id: string, onRun: (run: ReproRun) => void, onDisconnect: () => void) {
     const source = new EventSource(`/api/runs/${id}/events`);
     source.onmessage = (message) => {

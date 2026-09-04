@@ -6,6 +6,7 @@ data/runs/
 apps/*/dist/
 playwright-report/
 test-results/
+reports/
 .DS_Store
 *.log
 *.tsbuildinfo

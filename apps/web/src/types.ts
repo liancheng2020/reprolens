@@ -1,6 +1,23 @@
 export type RunStatus = "queued" | "running" | "completed" | "failed";
 export type DeviceName = "desktop" | "iphone13" | "pixel7";
 export type VerificationStatus = "improved" | "regressed" | "changed" | "unchanged";
+export type GitHubPublishStatus = "pending" | "publishing" | "published" | "failed";
+
+export interface GitHubRunSource {
+  type: "github";
+  repository: string;
+  issueNumber: number;
+  issueUrl: string;
+  issueTitle: string;
+  headSha: string;
+  trigger: "manual" | "label" | "action";
+  publishStatus: GitHubPublishStatus;
+  checkRunId?: number;
+  checkUrl?: string;
+  commentId?: number;
+  publishedAt?: string;
+  publishError?: string;
+}
 
 export interface CreateRunInput {
   url: string;
@@ -86,6 +103,7 @@ export interface ReproRun {
     accessibilityIssues: number;
     testedDevices: number;
   };
+  source?: GitHubRunSource;
   error?: string;
 }
 
@@ -93,4 +111,9 @@ export interface AppConfig {
   provider: "deepseek" | "deterministic";
   model: string | null;
   demoUrl: string;
+  github: {
+    configured: boolean;
+    triggerLabel: string;
+    webhookConfigured: boolean;
+  };
 }

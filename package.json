@@ -1,6 +1,6 @@
 {
   "name": "reprolens",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Turn vague bug reports into visual evidence and regression tests.",
   "workspaces": [
@@ -9,6 +9,7 @@
   "scripts": {
     "start": "npm run start --workspace @reprolens/api",
     "dev": "concurrently --kill-others-on-fail --names API,WEB --prefix-colors cyan,magenta \"npm run dev --workspace @reprolens/api\" \"npm run dev --workspace @reprolens/web\"",
+    "github:run": "npm run github:run --workspace @reprolens/api",
     "build": "npm run build --workspace @reprolens/api && npm run build --workspace @reprolens/web",
     "test": "npm run test --workspace @reprolens/api",
     "check": "npm run test && npm run build",
