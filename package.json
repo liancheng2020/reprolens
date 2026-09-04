@@ -1,0 +1,24 @@
+{
+  "name": "reproflow-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turn vague bug reports into visual evidence and regression tests.",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "start": "npm run start --workspace @reproflow/api",
+    "dev": "concurrently --kill-others-on-fail --names API,WEB --prefix-colors cyan,magenta \"npm run dev --workspace @reproflow/api\" \"npm run dev --workspace @reproflow/web\"",
+    "build": "npm run build --workspace @reproflow/api && npm run build --workspace @reproflow/web",
+    "test": "npm run test --workspace @reproflow/api",
+    "check": "npm run test && npm run build",
+    "browser:install": "playwright install chromium"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "typescript": "^7.0.2"
+  }
+}

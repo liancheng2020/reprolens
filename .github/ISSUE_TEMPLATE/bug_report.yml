@@ -1,0 +1,38 @@
+name: Bug report
+description: 提交一个可以被 ReproFlow 复现的问题
+title: '[Bug] '
+labels: [bug, needs-reproduction]
+body:
+  - type: input
+    id: url
+    attributes:
+      label: Target URL
+      description: 可公开访问或本地复现的页面地址
+      placeholder: https://example.com/page
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: 实际发生了什么？
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: 正确结果应该是什么？
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device
+      options:
+        - Desktop
+        - iPhone 13
+        - Pixel 7
+        - Multiple devices
+    validations:
+      required: true
