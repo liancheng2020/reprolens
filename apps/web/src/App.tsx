@@ -75,14 +75,16 @@ function Logo() {
   );
 }
 
-function Shell({ children, onHome, onHistory, config }: { children: ReactNode; onHome: () => void; onHistory: () => void; config?: AppConfig }) {
+type AppView = "dashboard" | "history";
+
+function Shell({ children, activeView, onHome, onHistory, config }: { children: ReactNode; activeView: AppView; onHome: () => void; onHistory: () => void; config?: AppConfig }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <Logo />
         <nav>
-          <button className="nav-item active" onClick={onHome}><LayoutDashboard size={18} /> 工作台</button>
-          <button className="nav-item" onClick={onHistory}><History size={18} /> 运行记录</button>
+          <button className={`nav-item ${activeView === "dashboard" ? "active" : ""}`} aria-current={activeView === "dashboard" ? "page" : undefined} onClick={onHome}><LayoutDashboard size={18} /> 工作台</button>
+          <button className={`nav-item ${activeView === "history" ? "active" : ""}`} aria-current={activeView === "history" ? "page" : undefined} onClick={onHistory}><History size={18} /> 运行记录</button>
         </nav>
         <div className="sidebar-spacer" />
         <div className="agent-card">
@@ -96,6 +98,21 @@ function Shell({ children, onHome, onHistory, config }: { children: ReactNode; o
         <a className="github-link" href="https://github.com/liancheng2020/reprolens" target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub <ArrowUpRight size={14} /></a>
       </aside>
       <main className="main-shell">{children}</main>
+    </div>
+  );
+}
+
+function RunList({ runs, onSelect }: { runs: ReproRun[]; onSelect: (run: ReproRun) => void }) {
+  return (
+    <div className="run-list">
+      {runs.map((run) => (
+        <button key={run.id} className="run-row" onClick={() => onSelect(run)}>
+          <span className={`run-status ${run.status}`}><span /></span>
+          <span className="run-info"><strong>{run.input.issue}</strong><small>{formatTime(run.createdAt)} · {run.metrics.testedDevices} devices</small></span>
+          {run.score !== undefined ? <span className={`mini-score ${run.score >= 80 ? "good" : "bad"}`}>{run.score}</span> : <LoaderCircle className="spin" size={17} />}
+          <ChevronRight size={16} />
+        </button>
+      ))}
     </div>
   );
 }
@@ -243,18 +260,30 @@ function Dashboard({
             {!runs.length ? (
               <div className="empty-state"><div><SquareTerminal size={28} /></div><strong>还没有运行记录</strong><p>左侧已经填入演示任务，启动后将在这里保留完整证据。</p></div>
             ) : (
-              <div className="run-list">
-                {runs.slice(0, 6).map((run) => (
-                  <button key={run.id} className="run-row" onClick={() => onSelect(run)}>
-                    <span className={`run-status ${run.status}`}><span /></span>
-                    <span className="run-info"><strong>{run.input.issue}</strong><small>{formatTime(run.createdAt)} · {run.metrics.testedDevices} devices</small></span>
-                    {run.score !== undefined ? <span className={`mini-score ${run.score >= 80 ? "good" : "bad"}`}>{run.score}</span> : <LoaderCircle className="spin" size={17} />}
-                    <ChevronRight size={16} />
-                  </button>
-                ))}
-              </div>
+              <RunList runs={runs.slice(0, 6)} onSelect={onSelect} />
             )}
           </section>
+        </section>
+      </div>
+    </>
+  );
+}
+
+function RunHistory({ runs, config, onSelect }: { runs: ReproRun[]; config?: AppConfig; onSelect: (run: ReproRun) => void }) {
+  return (
+    <>
+      <Topbar title="运行记录" subtitle="查看历次复现任务及其证据结果" config={config} />
+      <div className="content history-content">
+        <section className="history-panel panel">
+          <div className="panel-heading">
+            <div><span className="section-kicker">RUN HISTORY</span><h3>全部运行</h3></div>
+            <span className="event-count">{runs.length} RUNS</span>
+          </div>
+          {!runs.length ? (
+            <div className="empty-state"><div><History size={28} /></div><strong>还没有运行记录</strong><p>在工作台创建一次复现任务后，运行结果会出现在这里。</p></div>
+          ) : (
+            <RunList runs={runs} onSelect={onSelect} />
+          )}
         </section>
       </div>
     </>
@@ -407,6 +436,7 @@ export default function App() {
   const [config, setConfig] = useState<AppConfig>();
   const [runs, setRuns] = useState<ReproRun[]>([]);
   const [selected, setSelected] = useState<ReproRun>();
+  const [view, setView] = useState<AppView>("dashboard");
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -434,7 +464,12 @@ export default function App() {
   if (loading) return <div className="splash"><Logo /><LoaderCircle className="spin" size={24} /><span>正在连接 ReproLens...</span></div>;
 
   return (
-    <Shell onHome={() => setSelected(undefined)} onHistory={() => setSelected(sortedRuns[0])} config={config}>
+    <Shell
+      activeView={view}
+      onHome={() => { setView("dashboard"); setSelected(undefined); }}
+      onHistory={() => { setView("history"); setSelected(undefined); }}
+      config={config}
+    >
       {selected ? (
         <RunDetail
           run={selected}
@@ -452,6 +487,8 @@ export default function App() {
             setSelected(next);
           }}
         />
+      ) : view === "history" ? (
+        <RunHistory runs={sortedRuns} config={config} onSelect={setSelected} />
       ) : (
         <Dashboard
           runs={sortedRuns}
