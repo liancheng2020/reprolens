@@ -16,6 +16,11 @@ export const api = {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input)
   }),
+  verifyRun: (id: string, url: string) => request<ReproRun>(`/api/runs/${id}/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  }),
   subscribe(id: string, onRun: (run: ReproRun) => void, onDisconnect: () => void) {
     const source = new EventSource(`/api/runs/${id}/events`);
     source.onmessage = (message) => {

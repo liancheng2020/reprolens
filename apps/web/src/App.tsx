@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { api } from "./api";
 import type { AppConfig, CreateRunInput, DeviceName, Finding, ReproRun } from "./types";
+import { VerificationPanel } from "./VerificationPanel";
 
 const defaultInput: CreateRunInput = {
   url: "http://127.0.0.1:8787/demo/shop",
@@ -90,7 +91,7 @@ function Shell({ children, onHome, onHistory, config }: { children: ReactNode; o
             <span>{config?.provider === "deepseek" ? "DeepSeek" : "Fallback"}</span>
           </div>
         </div>
-        <a className="github-link" href="https://github.com" target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub <ArrowUpRight size={14} /></a>
+        <a className="github-link" href="https://github.com/liancheng2020/reproflow-ai" target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub <ArrowUpRight size={14} /></a>
       </aside>
       <main className="main-shell">{children}</main>
     </div>
@@ -278,7 +279,7 @@ function FindingCard({ finding }: { finding: Finding }) {
   );
 }
 
-function RunDetail({ run, onBack, onRefresh }: { run: ReproRun; onBack: () => void; onRefresh: () => void }) {
+function RunDetail({ run, onBack, onRefresh, onVerify }: { run: ReproRun; onBack: () => void; onRefresh: () => void; onVerify: (url: string) => Promise<void> }) {
   const [activeDevice, setActiveDevice] = useState<DeviceName>(run.screenshots[0]?.device ?? run.input.devices[0]);
   const [copied, setCopied] = useState(false);
   const screenshot = run.screenshots.find((item) => item.device === activeDevice) ?? run.screenshots.at(-1);
@@ -322,6 +323,8 @@ function RunDetail({ run, onBack, onRefresh }: { run: ReproRun; onBack: () => vo
           </div>
           <ScoreRing score={run.score} />
         </section>
+
+        <VerificationPanel run={run} activeDevice={activeDevice} onVerify={onVerify} />
 
         <section className="inspect-grid">
           <div className="browser-panel panel">
@@ -427,7 +430,16 @@ export default function App() {
   return (
     <Shell onHome={() => setSelected(undefined)} onHistory={() => setSelected(sortedRuns[0])} config={config}>
       {selected ? (
-        <RunDetail run={selected} onBack={() => setSelected(undefined)} onRefresh={() => void api.run(selected.id).then(setSelected)} />
+        <RunDetail
+          run={selected}
+          onBack={() => setSelected(undefined)}
+          onRefresh={() => void api.run(selected.id).then(setSelected)}
+          onVerify={async (url) => {
+            const next = await api.verifyRun(selected.id, url);
+            setRuns((current) => [next, ...current.filter((item) => item.id !== next.id)]);
+            setSelected(next);
+          }}
+        />
       ) : (
         <Dashboard
           runs={sortedRuns}

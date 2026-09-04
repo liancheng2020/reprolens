@@ -4,12 +4,17 @@ import { config } from "./config.js";
 import { DeepSeekProvider } from "./provider.js";
 import { BrowserScanner } from "./scanner.js";
 import { RunStore } from "./store.js";
+import { buildVerification } from "./verification.js";
+import { VisualDiffService } from "./visual-diff.js";
 import type { CreateRunInput, Finding, ReproRun, ScreenshotArtifact, TimelineItem } from "./types.js";
+
+export class RunInputError extends Error {}
 
 export class RunManager {
   private readonly subscribers = new Map<string, Set<Response>>();
   private readonly provider = new DeepSeekProvider();
   private readonly scanner = new BrowserScanner(this.provider);
+  private readonly visualDiff = new VisualDiffService();
 
   constructor(private readonly store: RunStore) {}
 
@@ -18,6 +23,7 @@ export class RunManager {
   }
 
   async create(input: CreateRunInput): Promise<ReproRun> {
+    if (input.baselineRunId) await this.validateBaseline(input);
     const now = new Date().toISOString();
     const run: ReproRun = {
       id: randomUUID(),
@@ -41,6 +47,14 @@ export class RunManager {
     await this.store.save(run);
     setImmediate(() => void this.execute(run.id));
     return run;
+  }
+
+  private async validateBaseline(input: CreateRunInput): Promise<void> {
+    const baseline = await this.store.get(input.baselineRunId!);
+    if (!baseline) throw new RunInputError("基线任务不存在");
+    if (baseline.status !== "completed") throw new RunInputError("只能验证已完成的基线任务");
+    const missingDevice = input.devices.find((device) => !baseline.screenshots.some((item) => item.device === device));
+    if (missingDevice) throw new RunInputError(`基线缺少 ${missingDevice} 截图`);
   }
 
   async subscribe(id: string, response: Response): Promise<boolean> {
@@ -124,9 +138,6 @@ export class RunManager {
         }
       });
 
-      run.status = "completed";
-      run.completedAt = new Date().toISOString();
-      run.currentStep = "分析完成";
       run.score = result.score;
       run.verdict = result.verdict;
       run.confidence = result.confidence;
@@ -140,6 +151,28 @@ export class RunManager {
         accessibilityIssues: result.accessibilityIssues,
         testedDevices: run.input.devices.length
       };
+
+      if (run.input.baselineRunId) {
+        const baseline = await this.store.get(run.input.baselineRunId);
+        if (!baseline) throw new Error("基线任务在验证过程中不可用");
+        await this.push(run, "step", "生成 Before / After 像素对比", `${run.screenshots.length} 个设备`, "success");
+        const comparisons = await this.visualDiff.compare(baseline, run);
+        run.verification = buildVerification(baseline, run, comparisons);
+        const averageDiff = comparisons.length
+          ? comparisons.reduce((total, item) => total + item.mismatchRatio, 0) / comparisons.length
+          : 0;
+        await this.push(
+          run,
+          "comparison",
+          "修复验证完成",
+          `${run.verification.status} · 平均像素变化 ${(averageDiff * 100).toFixed(2)}%`,
+          run.verification.status === "regressed" ? "warning" : "success"
+        );
+      }
+
+      run.status = "completed";
+      run.completedAt = new Date().toISOString();
+      run.currentStep = "分析完成";
       await this.push(run, "complete", "分析完成", `${result.findings.length} 个发现 · 质量评分 ${result.score}`, "success");
     } catch (error) {
       run.status = "failed";

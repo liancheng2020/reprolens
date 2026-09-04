@@ -2,18 +2,20 @@ export type RunStatus = "queued" | "running" | "completed" | "failed";
 export type DeviceName = "desktop" | "iphone13" | "pixel7";
 export type Severity = "high" | "medium" | "low";
 export type FindingCategory = "functional" | "visual" | "accessibility" | "console" | "network";
+export type VerificationStatus = "improved" | "regressed" | "changed" | "unchanged";
 
 export interface CreateRunInput {
   url: string;
   issue: string;
   expected: string;
   devices: DeviceName[];
+  baselineRunId?: string;
 }
 
 export interface TimelineItem {
   id: string;
   at: string;
-  type: "status" | "step" | "screenshot" | "finding" | "complete" | "error";
+  type: "status" | "step" | "screenshot" | "finding" | "comparison" | "complete" | "error";
   title: string;
   detail?: string;
   state: "pending" | "running" | "success" | "warning" | "error";
@@ -47,6 +49,28 @@ export interface ScreenshotArtifact {
   url: string;
 }
 
+export interface VisualComparison {
+  id: string;
+  device: DeviceName;
+  baselineUrl: string;
+  currentUrl: string;
+  diffUrl: string;
+  width: number;
+  height: number;
+  mismatchPixels: number;
+  mismatchRatio: number;
+}
+
+export interface VerificationResult {
+  baselineRunId: string;
+  status: VerificationStatus;
+  scoreDelta: number;
+  resolvedFindings: number;
+  introducedFindings: number;
+  summary: string;
+  comparisons: VisualComparison[];
+}
+
 export interface RunMetrics {
   durationMs: number;
   consoleErrors: number;
@@ -71,6 +95,7 @@ export interface ReproRun {
   timeline: TimelineItem[];
   findings: Finding[];
   screenshots: ScreenshotArtifact[];
+  verification?: VerificationResult;
   generatedTest?: string;
   metrics: RunMetrics;
   error?: string;

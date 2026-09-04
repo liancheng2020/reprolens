@@ -53,6 +53,12 @@ Browser Scanner
 
 测试代码在本地确定性生成，只使用本轮真实操作过的控件，以及捕获到的 Network、Console 和布局证据。DeepSeek 不接收完整 DOM，也不决定最终选择器。
 
+### Fix Verification
+
+`verification.ts` 是无副作用的规则模块：按 `category + title` 对问题根因去重，对比基线与当前运行的质量分和问题集合，输出稳定的验证状态。它不读取文件，也不调用模型，因此可以独立测试和复用到 GitHub Checks。
+
+`visual-diff.ts` 只负责图片 I/O：读取同设备的两张 PNG，在页面高度不同的情况下归一化到白色画布，调用 Pixelmatch 生成差异图并返回变化像素数。运行编排仍由 Run Manager 负责，模块之间不共享可变状态。
+
 ## 数据结构
 
 每个 Run 包含：
@@ -63,6 +69,7 @@ Browser Scanner
 - TimelineItem 数组
 - Finding 数组
 - ScreenshotArtifact 数组
+- 可选的 baselineRunId 和 VerificationResult
 - verdict、confidence、score、summary
 - generatedTest
 
@@ -83,7 +90,7 @@ V1 允许访问 localhost，方便测试本地项目。因此它是本地开发�
 ## 扩展点
 
 - Provider 接口：增加 OpenAI、Ollama 或其他 OpenAI-compatible Provider。
-- Analyzer：增加 axe-core、Web Vitals、视觉像素 Diff。
+- Analyzer：增加 axe-core 和 Web Vitals。
 - Store：从 JSON 切换 PostgreSQL 和对象存储。
 - Queue：从进程内任务切换 Redis/BullMQ。
 - Trigger：增加 GitHub App、Issue label、PR check_suite。

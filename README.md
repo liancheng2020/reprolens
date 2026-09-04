@@ -24,6 +24,16 @@ ReproFlow AI 是一个面向前端开发者、测试工程师和开源维护者�
 - 无 Key 降级：DeepSeek 不可用时自动使用本地确定性规则。
 - 内置故障商城：安装后无需准备其他项目即可体验完整闭环。
 
+## 第二阶段：修复验证闭环
+
+- 任意已完成任务都可以一键设为基线，并对修复后的 URL 重放相同操作和设备矩阵。
+- 每个设备生成 Before、After、Pixel Diff 三联证据，不依赖模型判断像素变化。
+- 自动统计像素变化率、质量分变化、已解决问题和新引入问题。
+- 确定性给出 `improved`、`regressed`、`changed` 或 `unchanged` 验证结论。
+- 内置 Demo 自动预填修复版地址 `/demo/shop?fixed=1`，无需准备两个外部项目即可演示。
+
+最短体验路径：先运行首页预填的故障 Demo；任务完成后点击“验证修复”，系统会自动重放修复版并展示三联对比。
+
 ## 一次运行会发生什么
 
 ```text
@@ -137,6 +147,8 @@ ReproFlow-AI/
 │  │  │  ├─ scanner.ts        Playwright 浏览器 Worker
 │  │  │  ├─ provider.ts       DeepSeek 规划、总结与降级
 │  │  │  ├─ analyzer.ts       确定性证据分析和评分
+│  │  │  ├─ verification.ts   修复效果判定
+│  │  │  ├─ visual-diff.ts    PNG 归一化与像素 Diff
 │  │  │  ├─ store.ts          JSON 持久化
 │  │  │  └─ demo-page.ts      自带故障演示商城
 │  │  └─ tests/
@@ -160,10 +172,12 @@ ReproFlow-AI/
 | GET | `/api/config` | 前端运行配置 |
 | GET | `/api/runs` | 运行历史 |
 | POST | `/api/runs` | 创建复现任务 |
+| POST | `/api/runs/:id/verify` | 以历史任务为基线验证修复 |
 | GET | `/api/runs/:id` | 查询单次运行 |
 | GET | `/api/runs/:id/events` | SSE 实时事件流 |
 | GET | `/artifacts/:run/:file` | 截图证据 |
 | GET | `/demo/shop` | 内置故障页面 |
+| GET | `/demo/shop?fixed=1` | 内置修复后页面 |
 
 创建任务示例：
 
@@ -206,11 +220,11 @@ npm run check
 - [x] 多设备 Playwright 复现
 - [x] DeepSeek + 确定性降级
 - [x] Evidence-based Playwright 测试
+- [x] Before / After 修复验证
+- [x] 截图基线和像素 Diff
 - [ ] GitHub App 与 Issue 标签触发
 - [ ] GitHub Checks 证据报告
 - [ ] 自动创建测试 PR
-- [ ] Before / After 修复验证
-- [ ] 截图基线和像素 Diff
 - [ ] axe-core 完整可访问性扫描
 - [ ] Docker Worker 与并发任务队列
 
