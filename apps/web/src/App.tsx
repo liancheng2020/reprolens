@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
+  Accessibility,
   Activity,
   AlertTriangle,
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   FileCode2,
   GitFork,
   Globe2,
+  Gauge,
   History,
   LayoutDashboard,
   LoaderCircle,
@@ -28,12 +30,13 @@ import {
   Smartphone,
   Sparkles,
   SquareTerminal,
+  TrendingUp,
   Wifi
 } from "lucide-react";
 import { api } from "./api";
 import { GitHubImport } from "./GitHubImport";
 import { GitHubSourceCard } from "./GitHubSourceCard";
-import type { AppConfig, CreateRunInput, DeviceName, Finding, ReproRun } from "./types";
+import type { AppConfig, CreateRunInput, DeviceName, Finding, QualityTrendPoint, ReproRun, WebVitals } from "./types";
 import { VerificationPanel } from "./VerificationPanel";
 
 const defaultInput: CreateRunInput = {
@@ -53,6 +56,7 @@ const categoryLabels: Record<Finding["category"], string> = {
   functional: "功能",
   visual: "视觉",
   accessibility: "可访问性",
+  performance: "性能",
   console: "控制台",
   network: "网络"
 };
@@ -148,8 +152,8 @@ function Dashboard({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (config?.demoUrl) setInput((current) => ({ ...current, url: config.demoUrl }));
-  }, [config?.demoUrl]);
+    if (config?.demoUrl) setInput((current) => ({ ...current, url: config.demoUrl, qualityGate: config.qualityGate }));
+  }, [config?.demoUrl, config?.qualityGate]);
 
   const toggleDevice = (device: DeviceName) => {
     setInput((current) => ({
@@ -269,11 +273,63 @@ function Dashboard({
   );
 }
 
-function RunHistory({ runs, config, onSelect }: { runs: ReproRun[]; config?: AppConfig; onSelect: (run: ReproRun) => void }) {
+function QualityTrend({ trends }: { trends: QualityTrendPoint[] }) {
+  const pages = useMemo(() => [...new Set(trends.map((item) => item.url))], [trends]);
+  const [page, setPage] = useState("all");
+  const filtered = page === "all" ? trends : trends.filter((item) => item.url === page);
+  const recent = filtered.slice(-8);
+  const categories = ["accessibility", "performance", "visual", "network", "console"] as const;
+  const categoryTotals = categories.map((category) => ({
+    category,
+    count: filtered.reduce((total, item) => total + (item.categories[category] ?? 0), 0)
+  }));
+  const deviceAverages = (["desktop", "iphone13", "pixel7"] as DeviceName[]).map((device) => {
+    const values = filtered.flatMap((item) => item.devices.filter((metric) => metric.device === device).map((metric) => metric.score));
+    return { device, score: values.length ? Math.round(values.reduce((total, value) => total + value, 0) / values.length) : undefined };
+  });
+
+  return (
+    <section className="quality-trend panel">
+      <div className="panel-heading trend-heading">
+        <div><span className="section-kicker">QUALITY TREND</span><h3>页面质量趋势</h3></div>
+        <select value={page} onChange={(event) => setPage(event.target.value)} aria-label="筛选目标页面">
+          <option value="all">全部页面</option>
+          {pages.map((url) => <option key={url} value={url}>{url}</option>)}
+        </select>
+      </div>
+      {!filtered.length ? (
+        <div className="trend-empty"><TrendingUp size={24} /><span>完成 v0.4 质量扫描后，这里将展示评分趋势。</span></div>
+      ) : (
+        <div className="trend-layout">
+          <div className="score-trend" aria-label="最近质量评分">
+            {recent.map((item) => (
+              <div className="trend-column" key={item.runId} title={`${new Date(item.createdAt).toLocaleString("zh-CN")} · ${item.score}`}>
+                <span className={`trend-score ${item.gateStatus}`}>{item.score}</span>
+                <i style={{ height: `${Math.max(12, item.score)}%` }} />
+                <small>{new Date(item.createdAt).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}</small>
+              </div>
+            ))}
+          </div>
+          <div className="trend-summary">
+            <div className="category-totals">
+              {categoryTotals.map((item) => <span key={item.category}><b>{categoryLabels[item.category]}</b>{item.count}</span>)}
+            </div>
+            <div className="device-averages">
+              {deviceAverages.map((item) => <span key={item.device}><b>{deviceLabels[item.device]}</b>{item.score ?? "—"}</span>)}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RunHistory({ runs, trends, config, onSelect }: { runs: ReproRun[]; trends: QualityTrendPoint[]; config?: AppConfig; onSelect: (run: ReproRun) => void }) {
   return (
     <>
       <Topbar title="运行记录" subtitle="查看历次复现任务及其证据结果" config={config} />
       <div className="content history-content">
+        <QualityTrend trends={trends} />
         <section className="history-panel panel">
           <div className="panel-heading">
             <div><span className="section-kicker">RUN HISTORY</span><h3>全部运行</h3></div>
@@ -298,6 +354,59 @@ function ScoreRing({ score = 0 }: { score?: number }) {
   );
 }
 
+function formatVital(value: number | undefined, unit: string, digits = 0): string {
+  return value === undefined ? "—" : `${value.toFixed(digits)}${unit}`;
+}
+
+function vitalRating(name: string, value: number | undefined): "good" | "warn" | "bad" | "unknown" {
+  if (value === undefined) return "unknown";
+  const limits: Record<string, [number, number]> = { LCP: [2500, 4000], CLS: [0.1, 0.25], INP: [200, 500], FCP: [1800, 3000], TTFB: [800, 1800] };
+  const [good, poor] = limits[name] ?? [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+  return value <= good ? "good" : value <= poor ? "warn" : "bad";
+}
+
+function QualityPanel({ run, activeDevice }: { run: ReproRun; activeDevice: DeviceName }) {
+  const report = run.quality;
+  const metrics = report?.devices.find((item) => item.device === activeDevice);
+  const vitals: WebVitals | undefined = metrics?.vitals;
+  const cards = [
+    { name: "LCP", value: vitals?.lcpMs, display: formatVital(vitals?.lcpMs, "ms") },
+    { name: "CLS", value: vitals?.cls, display: formatVital(vitals?.cls, "", 3) },
+    { name: "INP", value: vitals?.inpMs, display: formatVital(vitals?.inpMs, "ms") },
+    { name: "FCP", value: vitals?.fcpMs, display: formatVital(vitals?.fcpMs, "ms") },
+    { name: "TTFB", value: vitals?.ttfbMs, display: formatVital(vitals?.ttfbMs, "ms") },
+    { name: "TRANSFER", value: undefined, display: formatVital(vitals?.transferSizeKb, "KB", 1) }
+  ];
+
+  return (
+    <section className="quality-panel panel">
+      <div className="quality-heading">
+        <div><span className="section-kicker">PAGE QUALITY</span><h3>页面质量报告</h3></div>
+        <div className={`quality-gate ${report?.gate.status ?? "pending"}`}>
+          {report?.gate.status === "failed" ? <AlertTriangle size={17} /> : <ShieldCheck size={17} />}
+          <span>{report ? report.gate.status === "failed" ? "质量门禁未通过" : report.gate.status === "passed" ? "质量门禁已通过" : "质量门禁未启用" : "等待质量分析"}</span>
+        </div>
+      </div>
+      {report?.gate.reasons.length ? <div className="gate-reasons">{report.gate.reasons.map((reason) => <span key={reason}>{reason}</span>)}</div> : null}
+      <div className="quality-body">
+        <div className="vital-grid">
+          {cards.map((card) => (
+            <div className={`vital-card ${vitalRating(card.name, card.value)}`} key={card.name}>
+              <span>{card.name}</span><strong>{card.display}</strong>
+            </div>
+          ))}
+        </div>
+        <div className="quality-summary">
+          <div><Gauge size={18} /><span>设备评分</span><strong>{metrics?.score ?? "—"}</strong></div>
+          <div><Accessibility size={18} /><span>WCAG 问题</span><strong>{metrics?.accessibilityIssues ?? "—"}</strong></div>
+          <div><Activity size={18} /><span>性能问题</span><strong>{metrics?.performanceIssues ?? "—"}</strong></div>
+          <small>{deviceLabels[activeDevice]} · {vitals?.resourceCount ?? 0} resources · DOM ready {formatVital(vitals?.domContentLoadedMs, "ms")}</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FindingCard({ finding }: { finding: Finding }) {
   return (
     <article className={`finding-card severity-${finding.severity}`}>
@@ -308,6 +417,8 @@ function FindingCard({ finding }: { finding: Finding }) {
       </div>
       <p>{finding.description}</p>
       <div className="evidence"><span>Evidence</span>{finding.evidence}</div>
+      {(finding.selector || finding.ruleId) && <div className="finding-location"><code>{finding.selector ?? finding.ruleId}</code>{finding.boundingBox && <span>{finding.boundingBox.width}×{finding.boundingBox.height} @ {finding.boundingBox.x},{finding.boundingBox.y}</span>}</div>}
+      <div className="recommendation"><span>修复建议</span><p>{finding.recommendation}</p>{finding.helpUrl && <a href={finding.helpUrl} target="_blank" rel="noreferrer">规则说明 <ArrowUpRight size={12} /></a>}</div>
     </article>
   );
 }
@@ -360,6 +471,8 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { ru
         <GitHubSourceCard run={run} canPublish={Boolean(config?.github.configured)} onPublish={onPublish} />
 
         <VerificationPanel run={run} activeDevice={activeDevice} onVerify={onVerify} />
+
+        <QualityPanel run={run} activeDevice={activeDevice} />
 
         <section className="inspect-grid">
           <div className="browser-panel panel">
@@ -425,6 +538,7 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { ru
           <div><SquareTerminal size={18} /><span>Console errors</span><strong>{run.metrics.consoleErrors}</strong></div>
           <div><Globe2 size={18} /><span>Network errors</span><strong>{run.metrics.networkErrors}</strong></div>
           <div><Eye size={18} /><span>A11y issues</span><strong>{run.metrics.accessibilityIssues}</strong></div>
+          <div><Gauge size={18} /><span>Performance</span><strong>{run.metrics.performanceIssues ?? 0}</strong></div>
           <div><Clock3 size={18} /><span>Duration</span><strong>{formatDuration(run.metrics.durationMs)}</strong></div>
         </section>
       </div>
@@ -435,15 +549,25 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { ru
 export default function App() {
   const [config, setConfig] = useState<AppConfig>();
   const [runs, setRuns] = useState<ReproRun[]>([]);
+  const [trends, setTrends] = useState<QualityTrendPoint[]>([]);
   const [selected, setSelected] = useState<ReproRun>();
   const [view, setView] = useState<AppView>("dashboard");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const load = async () => {
-    const [nextConfig, nextRuns] = await Promise.all([api.config(), api.runs()]);
-    setConfig(nextConfig);
-    setRuns(nextRuns);
-    setLoading(false);
+    setLoading(true);
+    setLoadError("");
+    try {
+      const [nextConfig, nextRuns, nextTrends] = await Promise.all([api.config(), api.runs(), api.qualityTrends()]);
+      setConfig(nextConfig);
+      setRuns(nextRuns);
+      setTrends(nextTrends);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "无法连接 ReproLens API");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { void load(); }, []);
@@ -458,16 +582,20 @@ export default function App() {
       () => void api.run(selected.id).then(setSelected).catch(() => undefined)
     );
   }, [selected?.id, selected?.status]);
+  useEffect(() => {
+    if (selected?.status === "completed") void api.qualityTrends().then(setTrends).catch(() => undefined);
+  }, [selected?.id, selected?.status]);
 
   const sortedRuns = useMemo(() => [...runs].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [runs]);
 
   if (loading) return <div className="splash"><Logo /><LoaderCircle className="spin" size={24} /><span>正在连接 ReproLens...</span></div>;
+  if (loadError) return <div className="splash"><Logo /><AlertTriangle size={24} /><strong>API 连接失败</strong><span>{loadError}</span><button className="secondary-button" onClick={() => void load()}><RefreshCw size={15} />重新连接</button></div>;
 
   return (
     <Shell
       activeView={view}
       onHome={() => { setView("dashboard"); setSelected(undefined); }}
-      onHistory={() => { setView("history"); setSelected(undefined); }}
+      onHistory={() => { setView("history"); setSelected(undefined); void api.qualityTrends().then(setTrends).catch(() => undefined); }}
       config={config}
     >
       {selected ? (
@@ -488,7 +616,7 @@ export default function App() {
           }}
         />
       ) : view === "history" ? (
-        <RunHistory runs={sortedRuns} config={config} onSelect={setSelected} />
+        <RunHistory runs={sortedRuns} trends={trends} config={config} onSelect={setSelected} />
       ) : (
         <Dashboard
           runs={sortedRuns}

@@ -25,6 +25,47 @@ export interface CreateRunInput {
   expected: string;
   devices: DeviceName[];
   baselineRunId?: string;
+  qualityGate?: QualityGateConfig;
+}
+
+export interface QualityGateConfig {
+  enabled: boolean;
+  minScore: number;
+  maxHighSeverityFindings: number;
+  maxAccessibilityIssues: number;
+  maxPerformanceIssues: number;
+}
+
+export interface WebVitals {
+  lcpMs?: number;
+  cls?: number;
+  inpMs?: number;
+  fcpMs?: number;
+  ttfbMs?: number;
+  domContentLoadedMs?: number;
+  loadMs?: number;
+  resourceCount: number;
+  transferSizeKb: number;
+}
+
+export interface DeviceQualityMetrics {
+  device: DeviceName;
+  score: number;
+  accessibilityIssues: number;
+  performanceIssues: number;
+  vitals: WebVitals;
+}
+
+export interface QualityGateResult {
+  status: "passed" | "failed" | "disabled";
+  thresholds: QualityGateConfig;
+  reasons: string[];
+}
+
+export interface QualityReport {
+  gate: QualityGateResult;
+  devices: DeviceQualityMetrics[];
+  categoryCounts: Record<Finding["category"], number>;
 }
 
 export interface TimelineItem {
@@ -38,7 +79,7 @@ export interface TimelineItem {
 
 export interface Finding {
   id: string;
-  category: "functional" | "visual" | "accessibility" | "console" | "network";
+  category: "functional" | "visual" | "accessibility" | "performance" | "console" | "network";
   severity: "high" | "medium" | "low";
   title: string;
   description: string;
@@ -46,6 +87,9 @@ export interface Finding {
   recommendation: string;
   device: DeviceName;
   selector?: string;
+  boundingBox?: { x: number; y: number; width: number; height: number };
+  ruleId?: string;
+  helpUrl?: string;
 }
 
 export interface ScreenshotArtifact {
@@ -101,8 +145,10 @@ export interface ReproRun {
     consoleErrors: number;
     networkErrors: number;
     accessibilityIssues: number;
+    performanceIssues?: number;
     testedDevices: number;
   };
+  quality?: QualityReport;
   source?: GitHubRunSource;
   error?: string;
 }
@@ -111,9 +157,20 @@ export interface AppConfig {
   provider: "deepseek" | "deterministic";
   model: string | null;
   demoUrl: string;
+  qualityGate: QualityGateConfig;
   github: {
     configured: boolean;
     triggerLabel: string;
     webhookConfigured: boolean;
   };
+}
+
+export interface QualityTrendPoint {
+  runId: string;
+  createdAt: string;
+  url: string;
+  score: number;
+  gateStatus: QualityGateResult["status"];
+  categories: Record<Finding["category"], number>;
+  devices: DeviceQualityMetrics[];
 }

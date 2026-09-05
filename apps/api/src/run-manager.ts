@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Response } from "express";
 import { config } from "./config.js";
 import { DeepSeekProvider } from "./provider.js";
+import { buildQualityReport } from "./quality.js";
 import { BrowserScanner } from "./scanner.js";
 import { RunStore } from "./store.js";
 import { buildVerification } from "./verification.js";
@@ -41,6 +42,7 @@ export class RunManager {
         consoleErrors: 0,
         networkErrors: 0,
         accessibilityIssues: 0,
+        performanceIssues: 0,
         testedDevices: input.devices.length
       },
       source
@@ -150,8 +152,17 @@ export class RunManager {
         consoleErrors: result.consoleErrors,
         networkErrors: result.networkErrors,
         accessibilityIssues: result.accessibilityIssues,
+        performanceIssues: result.performanceIssues,
         testedDevices: run.input.devices.length
       };
+      run.quality = buildQualityReport(run.findings, result.score, result.qualityMetrics, run.input.qualityGate);
+      await this.push(
+        run,
+        "step",
+        `质量门禁${run.quality.gate.status === "failed" ? "未通过" : run.quality.gate.status === "passed" ? "已通过" : "未启用"}`,
+        run.quality.gate.reasons.join("；") || `评分 ${result.score} · A11y ${result.accessibilityIssues} · 性能 ${result.performanceIssues}`,
+        run.quality.gate.status === "failed" ? "warning" : "success"
+      );
 
       if (run.input.baselineRunId) {
         const baseline = await this.store.get(run.input.baselineRunId);

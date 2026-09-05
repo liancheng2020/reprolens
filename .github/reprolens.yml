@@ -6,3 +6,9 @@ devices:
 publish:
   issueComment: true
   checkRun: true
+qualityGate:
+  enabled: true
+  minScore: 75
+  maxHighSeverityFindings: 0
+  maxAccessibilityIssues: 3
+  maxPerformanceIssues: 2

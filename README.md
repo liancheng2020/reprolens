@@ -1,15 +1,15 @@
 # ReproLens
 
-> 将模糊的 Web Bug 报告转化为可复现证据、像素 Diff 和回归测试。
+> 将模糊的 Web Bug 报告转化为可复现证据、页面质量报告、像素 Diff 和回归测试。
 
-ReproLens 是一个面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现与修复验证工具。输入目标页面、问题描述和期望结果，它会操作真实 Chromium，在多种设备尺寸下采集截图、DOM 指标、Console 与 Network 证据，最后交付结构化报告、像素 Diff 和 Playwright 回归测试。
+ReproLens 是一个面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现与页面质量分析工具。输入目标页面、问题描述和期望结果，它会操作真实 Chromium，在多种设备尺寸下采集截图、WCAG、Web Vitals、Console 与 Network 证据，最后交付质量门禁、结构化报告、像素 Diff 和 Playwright 回归测试。
 
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-5FA04E)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-visual_dashboard-61DAFB)](https://react.dev/)
 [![Playwright](https://img.shields.io/badge/Playwright-browser_worker-2EAD33)](https://playwright.dev/)
 [![License](https://img.shields.io/badge/license-MIT-8CF7C7)](LICENSE)
 
-## 当前版本：v0.3.0
+## 当前版本：v0.4.0
 
 ReproLens 是一个可独立安装、运行和演示的开源项目，完整包含前端工作台、API、浏览器执行器、持久化和内置 Demo。项目采用需求驱动的小步迭代：每个版本聚焦一个可验收的用户闭环，并同步交付代码、测试和文档。
 
@@ -51,6 +51,16 @@ ReproLens 是一个可独立安装、运行和演示的开源项目，完整包�
 
 最短 GitHub 路径：在仓库 Issue 中填写 Target URL、Problem、Expected behavior 和 Device，添加 `needs-reproduction` 标签，Actions 会执行扫描并把报告同步回 Issue。
 
+### v0.4.0 — 页面质量分析闭环
+
+- 使用 axe-core 执行 WCAG 2 A/AA 审计，输出规则编号、DOM 选择器、元素坐标和修复建议。
+- 按 Desktop、iPhone 13、Pixel 7 分别采集 LCP、CLS、INP、FCP、TTFB、DOM Ready 和资源体积。
+- 根据稳定阈值生成性能问题和设备质量评分，不依赖模型判断指标是否合格。
+- 运行详情展示质量门禁、设备级 Web Vitals 和可执行修复建议。
+- 运行记录支持按页面查看评分趋势、问题类型累计和设备平均分。
+- GitHub Check 支持最低评分、高严重度、可访问性和性能问题上限，门禁失败自动阻断。
+- v0.1-v0.3 的历史 JSON 记录无需迁移，仍可正常查看。
+
 ## 一次运行会发生什么
 
 ```text
@@ -64,10 +74,10 @@ ReproLens 是一个可独立安装、运行和演示的开源项目，完整包�
               │
       ┌───────┼────────┐
       ▼       ▼        ▼
-   Screenshot DOM   Console/Network
-      └───────┼────────┘
+ Screenshot WCAG/Web Vitals Console/Network
+      └──────────┼──────────┘
               ▼
-        确定性证据分析
+      确定性证据分析 + 质量门禁
               │
               ▼
  可视化报告 + Playwright 回归测试
@@ -152,6 +162,12 @@ devices: [desktop, iphone13, pixel7]
 publish:
   issueComment: true
   checkRun: true
+qualityGate:
+  enabled: true
+  minScore: 75
+  maxHighSeverityFindings: 0
+  maxAccessibilityIssues: 3
+  maxPerformanceIssues: 2
 ```
 
 如果页面地址固定，也可在配置中增加 `targetUrl`。工作流仅声明 `contents: read`、`issues: write` 和 `checks: write` 权限；`GITHUB_TOKEN` 只用于当前仓库。
@@ -194,6 +210,7 @@ reprolens/
 │  │  │  ├─ scanner.ts        Playwright 浏览器 Worker
 │  │  │  ├─ provider.ts       DeepSeek 规划、总结与降级
 │  │  │  ├─ analyzer.ts       确定性证据分析和评分
+│  │  │  ├─ quality.ts        质量门禁、设备评分和趋势
 │  │  │  ├─ verification.ts   修复效果判定
 │  │  │  ├─ visual-diff.ts    PNG 归一化与像素 Diff
 │  │  │  ├─ github/           Issue 解析、API 客户端、Webhook 与报告发布
@@ -222,6 +239,7 @@ reprolens/
 | GET | `/health` | 服务与 Provider 状态 |
 | GET | `/api/config` | 前端运行配置 |
 | GET | `/api/runs` | 运行历史 |
+| GET | `/api/quality/trends` | 最近 30 次页面质量趋势，可按 URL 过滤 |
 | POST | `/api/runs` | 创建复现任务 |
 | POST | `/api/runs/:id/verify` | 以历史任务为基线验证修复 |
 | GET | `/api/runs/:id` | 查询单次运行 |
@@ -241,7 +259,14 @@ reprolens/
   "url": "http://127.0.0.1:8787/demo/shop",
   "issue": "移动端点击加入购物车后，数量没有更新并出现横向滚动。",
   "expected": "购物车数量更新为 1，页面无横向滚动。",
-  "devices": ["desktop", "iphone13", "pixel7"]
+  "devices": ["desktop", "iphone13", "pixel7"],
+  "qualityGate": {
+    "enabled": true,
+    "minScore": 75,
+    "maxHighSeverityFindings": 0,
+    "maxAccessibilityIssues": 3,
+    "maxPerformanceIssues": 2
+  }
 }
 ```
 
@@ -275,8 +300,8 @@ npm run check
 |---|---|---|
 | v0.1.0 | 从 Bug 描述到浏览器证据和回归测试 | 已完成 |
 | v0.2.0 | 从故障基线到修复验证和像素 Diff | 已完成 |
-| v0.3.0 | 从 GitHub Issue 到 Checks 证据报告 | 当前版本 |
-| v0.4.0 | 更完整的可访问性与页面质量分析 | 候选 |
+| v0.3.0 | 从 GitHub Issue 到 Checks 证据报告 | 已完成 |
+| v0.4.0 | 从 Bug 复现到 WCAG、Web Vitals、质量门禁和趋势 | 当前版本 |
 | v0.5.0 | Docker Worker 与并发任务队列 | 候选 |
 
 版本范围会根据真实使用需求调整；未进入当前版本的能力不会提前堆入主流程。

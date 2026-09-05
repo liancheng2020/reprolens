@@ -36,5 +36,11 @@ describe("GitHub issue parser", () => {
     expect(parsed.triggerLabel).toBe("reprolens");
     expect(parsed.devices).toEqual(["desktop"]);
     expect(parsed.publish.issueComment).toBe(false);
+    expect(parsed.qualityGate.minScore).toBe(75);
+  });
+
+  it("loads quality gate overrides", () => {
+    const parsed = parseRepositoryConfig("qualityGate:\n  enabled: true\n  minScore: 90\n  maxPerformanceIssues: 0");
+    expect(parsed.qualityGate).toMatchObject({ enabled: true, minScore: 90, maxPerformanceIssues: 0 });
   });
 });

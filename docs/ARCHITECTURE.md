@@ -14,12 +14,14 @@ Run Manager ───────────────► JSON Run Store
 Browser Scanner
   ├─ DeepSeek Planner
   ├─ Playwright Chromium
+  ├─ axe-core WCAG Audit
+  ├─ Web Vitals Collector
   ├─ Screenshot Collector
   ├─ Console/Network Collector
   └─ Deterministic Analyzer
           │
           ▼
-  Evidence + Regression Test
+  Evidence + Quality Gate + Regression Test
           │
           ▼
  GitHub Check + Issue Report + Actions Artifact
@@ -51,6 +53,12 @@ Browser Scanner
 ### Deterministic Analyzer
 
 模型不负责像素尺寸、HTTP 状态和 DOM 属性判断。分析器从浏览器原始数据生成结构化 Finding，并按根因去重计算评分。
+
+### Page Quality Analyzer
+
+`scanner.ts` 在页面加载前注册 PerformanceObserver，操作完成后读取 LCP、CLS、INP、FCP、TTFB 和加载指标，并运行 axe-core WCAG 2 A/AA 审计。持久化前只保留规则、有限节点、选择器和坐标，避免保存 axe 原始大对象。
+
+`quality.ts` 是无副作用规则模块，负责分类统计、设备评分、质量门禁和最近 30 次趋势。默认门禁检查最低评分、高严重度、可访问性和性能问题数；GitHub 与 Web 任务共用同一结果。
 
 ### Regression Test Generator
 
@@ -84,6 +92,7 @@ GitHub 集成位于 `apps/api/src/github`，是围绕现有 Run Manager 的适�
 - Provider、模型和执行指标
 - TimelineItem 数组
 - Finding 数组
+- 可选的设备级 Web Vitals、分类统计和质量门禁结果
 - ScreenshotArtifact 数组
 - 可选的 baselineRunId 和 VerificationResult
 - verdict、confidence、score、summary
@@ -111,7 +120,7 @@ GitHub 集成位于 `apps/api/src/github`，是围绕现有 Run Manager 的适�
 ## 扩展点
 
 - Provider 接口：增加 OpenAI、Ollama 或其他 OpenAI-compatible Provider。
-- Analyzer：增加 axe-core 和 Web Vitals。
+- Analyzer：增加新的性能预算与业务自定义规则。
 - Store：从 JSON 切换 PostgreSQL 和对象存储。
 - Queue：从进程内任务切换 Redis/BullMQ。
 - Trigger：增加 GitHub App 安装流程和 PR check_suite。

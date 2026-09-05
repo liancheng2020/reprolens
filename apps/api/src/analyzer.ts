@@ -1,11 +1,39 @@
 import { randomUUID } from "node:crypto";
 import type { AuditSnapshot, Finding, Severity } from "./types.js";
 
+function axeSeverity(impact: NonNullable<AuditSnapshot["axeViolations"]>[number]["impact"]): Severity {
+  if (impact === "critical" || impact === "serious") return "high";
+  if (impact === "moderate") return "medium";
+  return "low";
+}
+
+function performanceSeverity(value: number, needsImprovement: number, poor: number): Severity | undefined {
+  if (value > poor) return "high";
+  if (value > needsImprovement) return "medium";
+  return undefined;
+}
+
 export function buildFindings(audit: AuditSnapshot): Finding[] {
   const findings: Finding[] = [];
   const add = (finding: Omit<Finding, "id" | "device">) => {
     findings.push({ id: randomUUID(), device: audit.device, ...finding });
   };
+
+  for (const violation of audit.axeViolations ?? []) {
+    const first = violation.nodes[0];
+    add({
+      category: "accessibility",
+      severity: axeSeverity(violation.impact),
+      title: violation.help,
+      description: violation.description,
+      evidence: [first?.target.join(" "), first?.failureSummary].filter(Boolean).join(" · ").slice(0, 500),
+      recommendation: first?.failureSummary?.replace(/^Fix (any|all) of the following:\s*/i, "") ?? violation.help,
+      selector: first?.target.join(" "),
+      boundingBox: first?.box,
+      ruleId: violation.id,
+      helpUrl: violation.helpUrl
+    });
+  }
 
   if (audit.horizontalOverflow > 1) {
     add({
@@ -18,7 +46,7 @@ export function buildFindings(audit: AuditSnapshot): Finding[] {
     });
   }
 
-  if (audit.missingAlt.length) {
+  if (audit.missingAlt.length && !(audit.axeViolations ?? []).some((item) => item.id === "image-alt")) {
     const first = audit.missingAlt[0];
     add({
       category: "accessibility",
@@ -32,7 +60,7 @@ export function buildFindings(audit: AuditSnapshot): Finding[] {
     });
   }
 
-  if (audit.unlabeledControls.length) {
+  if (audit.unlabeledControls.length && !(audit.axeViolations ?? []).some((item) => ["button-name", "label", "select-name", "aria-input-field-name"].includes(item.id))) {
     const first = audit.unlabeledControls[0];
     add({
       category: "accessibility",
@@ -82,6 +110,32 @@ export function buildFindings(audit: AuditSnapshot): Finding[] {
       evidence: `共捕获 ${audit.networkErrors.length} 个 HTTP 4xx/5xx 响应`,
       recommendation: "检查接口响应与前端错误分支，确保失败时提供明确反馈。"
     });
+  }
+
+  const vitals = audit.vitals;
+  if (vitals) {
+    const performanceChecks = [
+      { key: "LCP", value: vitals.lcpMs, improve: 2500, poor: 4000, unit: "ms", recommendation: "压缩首屏关键资源、预加载主视觉并缩短关键渲染路径。" },
+      { key: "CLS", value: vitals.cls, improve: 0.1, poor: 0.25, unit: "", recommendation: "为图片和动态区域预留尺寸，避免加载后插入内容导致布局偏移。" },
+      { key: "INP", value: vitals.inpMs, improve: 200, poor: 500, unit: "ms", recommendation: "拆分长任务并减少主线程阻塞，优先响应用户交互。" },
+      { key: "FCP", value: vitals.fcpMs, improve: 1800, poor: 3000, unit: "ms", recommendation: "减少阻塞渲染的 CSS/脚本，优化首屏字体和关键资源加载。" },
+      { key: "TTFB", value: vitals.ttfbMs, improve: 800, poor: 1800, unit: "ms", recommendation: "检查服务端处理、缓存策略和网络链路，缩短首字节时间。" }
+    ] as const;
+
+    for (const check of performanceChecks) {
+      if (check.value === undefined) continue;
+      const severity = performanceSeverity(check.value, check.improve, check.poor);
+      if (!severity) continue;
+      add({
+        category: "performance",
+        severity,
+        title: `${check.key} 超出推荐阈值`,
+        description: `${check.key} 实测 ${check.value}${check.unit}，推荐不超过 ${check.improve}${check.unit}。`,
+        evidence: `${audit.device} · ${audit.viewport.width}×${audit.viewport.height}`,
+        recommendation: check.recommendation,
+        ruleId: check.key.toLowerCase()
+      });
+    }
   }
 
   return findings;

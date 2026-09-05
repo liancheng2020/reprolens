@@ -1,7 +1,7 @@
 export type RunStatus = "queued" | "running" | "completed" | "failed";
 export type DeviceName = "desktop" | "iphone13" | "pixel7";
 export type Severity = "high" | "medium" | "low";
-export type FindingCategory = "functional" | "visual" | "accessibility" | "console" | "network";
+export type FindingCategory = "functional" | "visual" | "accessibility" | "performance" | "console" | "network";
 export type VerificationStatus = "improved" | "regressed" | "changed" | "unchanged";
 export type GitHubPublishStatus = "pending" | "publishing" | "published" | "failed";
 
@@ -27,6 +27,47 @@ export interface CreateRunInput {
   expected: string;
   devices: DeviceName[];
   baselineRunId?: string;
+  qualityGate?: QualityGateConfig;
+}
+
+export interface QualityGateConfig {
+  enabled: boolean;
+  minScore: number;
+  maxHighSeverityFindings: number;
+  maxAccessibilityIssues: number;
+  maxPerformanceIssues: number;
+}
+
+export interface QualityGateResult {
+  status: "passed" | "failed" | "disabled";
+  thresholds: QualityGateConfig;
+  reasons: string[];
+}
+
+export interface WebVitals {
+  lcpMs?: number;
+  cls?: number;
+  inpMs?: number;
+  fcpMs?: number;
+  ttfbMs?: number;
+  domContentLoadedMs?: number;
+  loadMs?: number;
+  resourceCount: number;
+  transferSizeKb: number;
+}
+
+export interface DeviceQualityMetrics {
+  device: DeviceName;
+  score: number;
+  accessibilityIssues: number;
+  performanceIssues: number;
+  vitals: WebVitals;
+}
+
+export interface QualityReport {
+  gate: QualityGateResult;
+  devices: DeviceQualityMetrics[];
+  categoryCounts: Record<FindingCategory, number>;
 }
 
 export interface TimelineItem {
@@ -56,6 +97,8 @@ export interface Finding {
   device: DeviceName;
   selector?: string;
   boundingBox?: BoundingBox;
+  ruleId?: string;
+  helpUrl?: string;
 }
 
 export interface ScreenshotArtifact {
@@ -93,6 +136,7 @@ export interface RunMetrics {
   consoleErrors: number;
   networkErrors: number;
   accessibilityIssues: number;
+  performanceIssues?: number;
   testedDevices: number;
 }
 
@@ -115,6 +159,7 @@ export interface ReproRun {
   verification?: VerificationResult;
   generatedTest?: string;
   metrics: RunMetrics;
+  quality?: QualityReport;
   source?: GitHubRunSource;
   error?: string;
 }
@@ -145,4 +190,30 @@ export interface AuditSnapshot {
   consoleErrors: string[];
   networkErrors: Array<{ url: string; status: number }>;
   pageErrors: string[];
+  axeViolations?: AxeViolation[];
+  vitals?: WebVitals;
+}
+
+export interface AxeViolation {
+  id: string;
+  impact: "minor" | "moderate" | "serious" | "critical" | null;
+  help: string;
+  helpUrl: string;
+  description: string;
+  nodes: Array<{
+    target: string[];
+    html: string;
+    failureSummary?: string;
+    box?: BoundingBox;
+  }>;
+}
+
+export interface QualityTrendPoint {
+  runId: string;
+  createdAt: string;
+  url: string;
+  score: number;
+  gateStatus: QualityGateResult["status"];
+  categories: Record<FindingCategory, number>;
+  devices: DeviceQualityMetrics[];
 }

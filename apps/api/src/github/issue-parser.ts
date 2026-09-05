@@ -66,6 +66,7 @@ export function issueToRunInput(issue: GitHubIssue, repositoryConfig: Repository
     url,
     issue: [issue.title, problem].filter(Boolean).join("\n\n").slice(0, 3000),
     expected: expected.slice(0, 2000),
-    devices: parseDevices(deviceText, repositoryConfig.devices)
+    devices: parseDevices(deviceText, repositoryConfig.devices),
+    qualityGate: repositoryConfig.qualityGate
   };
 }

@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import axeCore from "axe-core";
 import { chromium, type Page } from "playwright";
 import { buildFindings, calculateConfidence, calculateScore } from "./analyzer.js";
 import { config } from "./config.js";
@@ -7,11 +8,13 @@ import { DeepSeekProvider } from "./provider.js";
 import type {
   AgentAction,
   AuditSnapshot,
+  AxeViolation,
   CreateRunInput,
   DeviceName,
   Finding,
   InteractiveElement,
-  ScreenshotArtifact
+  ScreenshotArtifact,
+  WebVitals
 } from "./types.js";
 
 export const devices: Record<DeviceName, { label: string; width: number; height: number }> = {
@@ -39,6 +42,111 @@ export interface ScanResult {
   consoleErrors: number;
   networkErrors: number;
   accessibilityIssues: number;
+  performanceIssues: number;
+  qualityMetrics: Array<{ device: DeviceName; vitals: WebVitals }>;
+}
+
+async function installPerformanceObservers(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const target = window as unknown as { __reprolensVitals: { lcpMs?: number; cls: number; inpMs?: number } };
+    target.__reprolensVitals = { cls: 0 };
+    const supports = (type: string) => PerformanceObserver.supportedEntryTypes?.includes(type);
+
+    if (supports("largest-contentful-paint")) {
+      new PerformanceObserver((list) => {
+        const last = list.getEntries().at(-1);
+        if (last) target.__reprolensVitals.lcpMs = last.startTime;
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+    }
+    if (supports("layout-shift")) {
+      let sessionValue = 0;
+      let sessionStart = 0;
+      let sessionEnd = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const shift = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
+          if (shift.hadRecentInput) continue;
+          if (sessionValue && entry.startTime - sessionEnd < 1000 && entry.startTime - sessionStart < 5000) {
+            sessionValue += shift.value;
+            sessionEnd = entry.startTime;
+          } else {
+            sessionValue = shift.value;
+            sessionStart = entry.startTime;
+            sessionEnd = entry.startTime;
+          }
+          target.__reprolensVitals.cls = Math.max(target.__reprolensVitals.cls, sessionValue);
+        }
+      }).observe({ type: "layout-shift", buffered: true });
+    }
+    if (supports("event")) {
+      const interactions = new Map<number, number>();
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const event = entry as PerformanceEntry & { duration: number; interactionId?: number };
+          if (!event.interactionId) continue;
+          interactions.set(event.interactionId, Math.max(interactions.get(event.interactionId) ?? 0, event.duration));
+        }
+        const durations = [...interactions.values()].sort((a, b) => b - a);
+        target.__reprolensVitals.inpMs = durations[Math.min(Math.floor(durations.length / 50), durations.length - 1)];
+      }).observe({ type: "event", buffered: true, durationThreshold: 16 } as PerformanceObserverInit);
+    }
+  });
+}
+
+async function collectWebVitals(page: Page): Promise<WebVitals> {
+  return page.evaluate(() => {
+    const observed = (window as unknown as { __reprolensVitals?: { lcpMs?: number; cls: number; inpMs?: number } }).__reprolensVitals;
+    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const paints = performance.getEntriesByType("paint");
+    const fcp = paints.find((entry) => entry.name === "first-contentful-paint")?.startTime;
+    const resources = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
+    const round = (value: number | undefined, digits = 0) => value === undefined ? undefined : Number(value.toFixed(digits));
+    return {
+      lcpMs: round(observed?.lcpMs),
+      cls: round(observed?.cls ?? 0, 3),
+      inpMs: round(observed?.inpMs),
+      fcpMs: round(fcp),
+      ttfbMs: round(navigation ? navigation.responseStart - navigation.startTime : undefined),
+      domContentLoadedMs: round(navigation ? navigation.domContentLoadedEventEnd - navigation.startTime : undefined),
+      loadMs: round(navigation ? navigation.loadEventEnd - navigation.startTime : undefined),
+      resourceCount: resources.length,
+      transferSizeKb: round(resources.reduce((total, entry) => total + entry.transferSize, 0) / 1024, 1) ?? 0
+    };
+  });
+}
+
+async function collectAxeViolations(page: Page): Promise<AxeViolation[]> {
+  try {
+    await page.evaluate(axeCore.source);
+    return await page.evaluate(async () => {
+      const axe = (window as unknown as { axe: { run: (root: Document, options: unknown) => Promise<{ violations: AxeViolation[] }> } }).axe;
+      const results = await axe.run(document, {
+        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+        resultTypes: ["violations"]
+      });
+      return results.violations.map((violation) => ({
+        id: violation.id,
+        impact: violation.impact,
+        help: violation.help,
+        helpUrl: violation.helpUrl,
+        description: violation.description,
+        nodes: violation.nodes.slice(0, 5).map((node) => {
+          const selector = node.target[0];
+          let box;
+          try {
+            const element = selector ? document.querySelector(selector) : null;
+            const rect = element?.getBoundingClientRect();
+            if (rect?.width && rect.height) box = { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) };
+          } catch {
+            box = undefined;
+          }
+          return { target: node.target, html: node.html.slice(0, 500), failureSummary: node.failureSummary, box };
+        })
+      }));
+    });
+  } catch {
+    return [];
+  }
 }
 
 async function interactiveElements(page: Page): Promise<InteractiveElement[]> {
@@ -126,6 +234,7 @@ async function auditPage(
       clippedElements
     };
   });
+  const [axeViolations, vitals] = await Promise.all([collectAxeViolations(page), collectWebVitals(page)]);
 
   return {
     device,
@@ -133,7 +242,9 @@ async function auditPage(
     ...domAudit,
     consoleErrors,
     networkErrors,
-    pageErrors
+    pageErrors,
+    axeViolations,
+    vitals
   };
 }
 
@@ -149,6 +260,7 @@ export class BrowserScanner {
     let usedDeepSeek = false;
     let consoleErrorCount = 0;
     let networkErrorCount = 0;
+    const qualityMetrics: Array<{ device: DeviceName; vitals: WebVitals }> = [];
     const artifactDir = path.join(config.artifactsDir, runId);
     await fs.mkdir(artifactDir, { recursive: true });
 
@@ -165,6 +277,7 @@ export class BrowserScanner {
           colorScheme: "dark"
         });
         const page = await context.newPage();
+        await installPerformanceObservers(page);
         const consoleErrors: string[] = [];
         const pageErrors: string[] = [];
         const networkErrors: Array<{ url: string; status: number }> = [];
@@ -204,6 +317,7 @@ export class BrowserScanner {
         await callbacks.screenshot(screenshot);
 
         const audit = await auditPage(page, deviceName, consoleErrors, networkErrors, pageErrors);
+        qualityMetrics.push({ device: deviceName, vitals: audit.vitals! });
         const deviceFindings = buildFindings(audit);
         consoleErrorCount += consoleErrors.length + pageErrors.length;
         networkErrorCount += networkErrors.length;
@@ -234,7 +348,9 @@ export class BrowserScanner {
       durationMs: Date.now() - startedAt,
       consoleErrors: consoleErrorCount,
       networkErrors: networkErrorCount,
-      accessibilityIssues: findings.filter((finding) => finding.category === "accessibility").length
+      accessibilityIssues: findings.filter((finding) => finding.category === "accessibility").length,
+      performanceIssues: findings.filter((finding) => finding.category === "performance").length,
+      qualityMetrics
     };
   }
 }

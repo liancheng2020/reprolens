@@ -36,4 +36,33 @@ describe("deterministic analyzer", () => {
     const pixel = mobile.map((finding) => ({ ...finding, id: finding.id + "-pixel", device: "pixel7" as const }));
     expect(calculateScore([...mobile, ...pixel])).toBe(82);
   });
+
+  it("maps axe violations to actionable WCAG findings without legacy duplicates", () => {
+    const findings = buildFindings({
+      ...cleanAudit,
+      missingAlt: [{ selector: "#hero" }],
+      axeViolations: [{
+        id: "image-alt",
+        impact: "critical",
+        help: "Images must have alternate text",
+        helpUrl: "https://dequeuniversity.com/rules/axe/image-alt",
+        description: "Ensure images have alternative text",
+        nodes: [{ target: ["#hero"], html: "<img id=\"hero\">", failureSummary: "Fix any of the following: Element does not have an alt attribute" }]
+      }]
+    });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ category: "accessibility", severity: "high", ruleId: "image-alt", selector: "#hero" });
+    expect(findings[0].recommendation).toContain("alt attribute");
+  });
+
+  it("turns poor Core Web Vitals into performance findings", () => {
+    const findings = buildFindings({
+      ...cleanAudit,
+      vitals: { lcpMs: 4500, cls: 0.02, inpMs: 120, fcpMs: 900, ttfbMs: 200, resourceCount: 12, transferSizeKb: 180 }
+    });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ category: "performance", severity: "high", ruleId: "lcp" });
+  });
 });

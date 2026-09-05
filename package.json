@@ -1,6 +1,6 @@
 {
   "name": "reprolens",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Turn vague bug reports into visual evidence and regression tests.",
   "workspaces": [

@@ -1,6 +1,6 @@
 {
   "name": "@reprolens/api",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "axe-core": "^4.13.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

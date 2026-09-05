@@ -37,7 +37,20 @@ export const repositoryConfigSchema = z.object({
   publish: z.object({
     issueComment: z.boolean().default(true),
     checkRun: z.boolean().default(true)
-  }).default({ issueComment: true, checkRun: true })
+  }).default({ issueComment: true, checkRun: true }),
+  qualityGate: z.object({
+    enabled: z.boolean().default(true),
+    minScore: z.number().int().min(0).max(100).default(75),
+    maxHighSeverityFindings: z.number().int().min(0).max(100).default(0),
+    maxAccessibilityIssues: z.number().int().min(0).max(100).default(3),
+    maxPerformanceIssues: z.number().int().min(0).max(100).default(2)
+  }).default({
+    enabled: true,
+    minScore: 75,
+    maxHighSeverityFindings: 0,
+    maxAccessibilityIssues: 3,
+    maxPerformanceIssues: 2
+  })
 });
 
 export type RepositoryConfig = z.infer<typeof repositoryConfigSchema> & { devices: DeviceName[] };

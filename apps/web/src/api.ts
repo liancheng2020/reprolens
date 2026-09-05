@@ -1,15 +1,24 @@
-import type { AppConfig, CreateRunInput, ReproRun } from "./types";
+import type { AppConfig, CreateRunInput, QualityTrendPoint, ReproRun } from "./types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error ?? "请求失败");
+  const body = await response.text();
+  let data: { error?: string } = {};
+  if (body) {
+    try {
+      data = JSON.parse(body) as { error?: string };
+    } catch {
+      throw new Error(response.ok ? "服务返回了无法解析的数据" : `服务暂时不可用（${response.status}）`);
+    }
+  }
+  if (!response.ok) throw new Error(data.error ?? `服务暂时不可用（${response.status}）`);
   return data as T;
 }
 
 export const api = {
   config: () => request<AppConfig>("/api/config"),
   runs: () => request<ReproRun[]>("/api/runs"),
+  qualityTrends: () => request<QualityTrendPoint[]>("/api/quality/trends"),
   run: (id: string) => request<ReproRun>(`/api/runs/${id}`),
   createRun: (input: CreateRunInput) => request<ReproRun>("/api/runs", {
     method: "POST",

@@ -7,6 +7,7 @@ import { config, projectRoot } from "./config.js";
 import { demoShopHtml } from "./demo-page.js";
 import { createGitHubRouter, type RawBodyRequest } from "./github/routes.js";
 import { GitHubService } from "./github/service.js";
+import { buildQualityTrends, defaultQualityGate } from "./quality.js";
 import { RunInputError, RunManager } from "./run-manager.js";
 import { RunStore } from "./store.js";
 
@@ -16,7 +17,14 @@ const createRunSchema = z.object({
   issue: z.string().trim().min(8, "请描述需要复现的问题").max(3000),
   expected: z.string().trim().min(4, "请填写期望结果").max(2000),
   devices: z.array(deviceSchema).min(1).max(3),
-  baselineRunId: z.string().uuid().optional()
+  baselineRunId: z.string().uuid().optional(),
+  qualityGate: z.object({
+    enabled: z.boolean(),
+    minScore: z.number().int().min(0).max(100),
+    maxHighSeverityFindings: z.number().int().min(0).max(100),
+    maxAccessibilityIssues: z.number().int().min(0).max(100),
+    maxPerformanceIssues: z.number().int().min(0).max(100)
+  }).optional()
 });
 
 const verifyRunSchema = z.object({
@@ -54,6 +62,7 @@ app.get("/api/config", (_request, response) => {
     provider: manager.providerConfigured ? "deepseek" : "deterministic",
     model: manager.providerConfigured ? config.deepseekModel : null,
     demoUrl: `http://127.0.0.1:${config.port}/demo/shop`,
+    qualityGate: defaultQualityGate,
     github: {
       configured: github.configured,
       triggerLabel: config.githubTriggerLabel,
@@ -65,6 +74,15 @@ app.get("/api/config", (_request, response) => {
 app.get("/api/runs", async (_request, response, next) => {
   try {
     response.json(await store.list());
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/quality/trends", async (request, response, next) => {
+  try {
+    const url = typeof request.query.url === "string" ? request.query.url : undefined;
+    response.json(buildQualityTrends(await store.list(), url));
   } catch (error) {
     next(error);
   }

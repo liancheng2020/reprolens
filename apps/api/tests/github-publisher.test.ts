@@ -47,5 +47,10 @@ describe("GitHub report publisher", () => {
     expect(checkConclusion(run())).toBe("failure");
     expect(checkConclusion(run({ verdict: "not_reproduced" }))).toBe("success");
     expect(checkConclusion(run({ verdict: "inconclusive" }))).toBe("neutral");
+    expect(checkConclusion(run({ verdict: "not_reproduced", quality: {
+      gate: { status: "failed", reasons: ["评分过低"], thresholds: { enabled: true, minScore: 75, maxHighSeverityFindings: 0, maxAccessibilityIssues: 3, maxPerformanceIssues: 2 } },
+      devices: [],
+      categoryCounts: { functional: 0, visual: 0, accessibility: 1, performance: 2, console: 0, network: 0 }
+    } }))).toBe("failure");
   });
 });

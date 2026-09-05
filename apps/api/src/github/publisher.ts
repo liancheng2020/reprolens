@@ -5,7 +5,7 @@ import type { RepositoryConfig } from "./types.js";
 export const REPORT_MARKER = "<!-- reprolens-report -->";
 
 export function checkConclusion(run: ReproRun): "success" | "failure" | "neutral" {
-  if (run.status === "failed" || run.verdict === "reproduced" || run.verification?.status === "regressed") return "failure";
+  if (run.status === "failed" || run.verdict === "reproduced" || run.verification?.status === "regressed" || run.quality?.gate.status === "failed") return "failure";
   if (run.verdict === "not_reproduced" || run.verification?.status === "improved") return "success";
   return "neutral";
 }
@@ -22,6 +22,9 @@ export function buildGitHubReport(run: ReproRun): string {
   const verification = run.verification
     ? `\n- 修复验证：**${run.verification.status}**（评分变化 ${run.verification.scoreDelta >= 0 ? "+" : ""}${run.verification.scoreDelta}）`
     : "";
+  const quality = run.quality
+    ? `\n- 质量门禁：**${run.quality.gate.status}**${run.quality.gate.reasons.length ? `（${run.quality.gate.reasons.join("；")}）` : ""}\n- 可访问性问题：${run.quality.categoryCounts.accessibility}；性能问题：${run.quality.categoryCounts.performance}`
+    : "";
 
   return `${REPORT_MARKER}
 ## ReproLens 自动验证报告
@@ -36,6 +39,7 @@ export function buildGitHubReport(run: ReproRun): string {
 
 ${run.summary ?? run.error ?? "任务已完成。"}
 ${verification}
+${quality}
 
 ### 关键发现
 
