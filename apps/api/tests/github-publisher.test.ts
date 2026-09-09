@@ -40,7 +40,27 @@ describe("GitHub report publisher", () => {
     const report = buildGitHubReport(run());
     expect(report).toContain(REPORT_MARKER);
     expect(report).toContain("已复现");
-    expect(report).toContain("Playwright 回归测试：已生成");
+    expect(report).toContain("Playwright 回归测试：草稿 / 尚未验证");
+    expect(report).toContain("旧版记录：未验证业务断言");
+  });
+
+  it("distinguishes generated business tests from unverified drafts", () => {
+    for (const testStatus of ["generated", "draft"] as const) {
+      const report = buildGitHubReport(run({
+        business: { version: 1, steps: [], devices: [], covered: 1, total: 1, testStatus }
+      }));
+      expect(report).toContain(testStatus === "generated"
+        ? "Playwright 回归测试：已生成，尚未自动重跑验证"
+        : "Playwright 回归测试：草稿 / 尚未验证");
+    }
+  });
+
+  it("requires complete business coverage before a successful check", () => {
+    const business = { version: 1 as const, steps: [], devices: [], covered: 0, total: 1, testStatus: "draft" as const };
+    expect(checkConclusion(run({ verdict: "not_reproduced", business }))).toBe("neutral");
+    expect(checkConclusion(run({ verdict: "inconclusive", business }))).toBe("neutral");
+    expect(checkConclusion(run({ verdict: "not_reproduced", business: { ...business, covered: 1 } }))).toBe("success");
+    expect(checkConclusion(run({ verdict: "reproduced", business: { ...business, covered: 1 } }))).toBe("failure");
   });
 
   it("maps verification outcomes to check conclusions", () => {

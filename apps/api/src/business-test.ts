@@ -37,7 +37,7 @@ export function generateBusinessTest(input: CreateRunInput): string {
         "  expect(new URL(page.url()).origin).toBe(origin);");
       if (step.target) {
         lines.push("  const " + t + " = " + locator(step.target) + ";");
-        if (step.assertion === "hidden") {
+        if (step.action === "assert" && ["hidden", "visible"].includes(step.assertion ?? "")) {
           lines.push("  expect(await " + t + ".count()).toBeLessThanOrEqual(1);");
         } else {
           lines.push("  await expect(" + t + ").toHaveCount(1, { timeout: 4000 });",

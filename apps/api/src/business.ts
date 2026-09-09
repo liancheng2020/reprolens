@@ -30,6 +30,16 @@ async function observe(page: Page, target?: Locator): Promise<string> {
   }), undefined, { timeout: TIMEOUT }));
 }
 
+// Supplementary evidence must never change the outcome of an action/assertion.
+async function observeSafely(page: Page, target?: Locator): Promise<string> {
+  try {
+    if (target && await target.count() !== 1) return "原目标已消失或不再唯一；当前页面：" + new URL(page.url()).pathname;
+    return await observe(page, target);
+  } catch {
+    return "操作后目标状态暂不可读取（不影响步骤结论）";
+  }
+}
+
 export function deviceVerdict(steps: StepEvidence[]): "reproduced" | "not_reproduced" | "inconclusive" {
   if (steps.some((step) => step.phase === "check" && step.status === "failed")) return "reproduced";
   const checks = steps.filter((step) => step.phase === "check");
@@ -92,7 +102,9 @@ export async function executePlan(page: Page, plan: ReproPlan, device: DeviceNam
           if (step.target) {
             target = locate(page, step.target);
             // Re-resolve after every navigation; never choose the first ambiguous match.
-            if (step.assertion === "hidden") {
+            if (step.action === "assert" && ["hidden", "visible"].includes(step.assertion ?? "")) {
+              // Zero matches is a valid state to test, not a failed precondition.
+              // Playwright's assertion waits for delayed appearance/disappearance.
               if (await target.count() > 1) throw new Error("目标匹配多个控件，请缩小定位范围");
             } else {
               await expect(target).toHaveCount(1, { timeout: TIMEOUT });
@@ -169,11 +181,14 @@ export async function executePlan(page: Page, plan: ReproPlan, device: DeviceNam
             }
           }
           result.status = "passed";
-          result.actual ||= step.assertion === "hidden" ? "目标已隐藏或消失" : await observe(page, target);
+          result.actual ||= step.assertion === "hidden" ? "目标已隐藏或消失" : await observeSafely(page, target);
         } catch (error) {
           const assertionFailure = Boolean(error && typeof error === "object" && "matcherResult" in error);
-          result.status = asserting && assertionFailure && step.phase === "check" ? "failed" : "blocked";
-          result.actual ||= await observe(page, target).catch(() => "目标当前不可读取");
+          const ambiguous = target ? await target.count().then(count => count > 1).catch(() => true) : false;
+          result.status = asserting && assertionFailure && !ambiguous && step.phase === "check" ? "failed" : "blocked";
+          result.actual ||= step.assertion === "visible" && result.status === "failed"
+            ? "等待超时：目标未出现或仍不可见"
+            : await observeSafely(page, target);
           result.detail = clean(error instanceof Error ? error.message : String(error));
           stopped = true;
         }
