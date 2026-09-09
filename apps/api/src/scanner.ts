@@ -50,15 +50,14 @@ async function installPerformanceObservers(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const target = window as unknown as { __reprolensVitals: { lcpMs?: number; cls: number; inpMs?: number } };
     target.__reprolensVitals = { cls: 0 };
-    const supports = (type: string) => PerformanceObserver.supportedEntryTypes?.includes(type);
 
-    if (supports("largest-contentful-paint")) {
+    if (PerformanceObserver.supportedEntryTypes?.includes("largest-contentful-paint")) {
       new PerformanceObserver((list) => {
         const last = list.getEntries().at(-1);
         if (last) target.__reprolensVitals.lcpMs = last.startTime;
       }).observe({ type: "largest-contentful-paint", buffered: true });
     }
-    if (supports("layout-shift")) {
+    if (PerformanceObserver.supportedEntryTypes?.includes("layout-shift")) {
       let sessionValue = 0;
       let sessionStart = 0;
       let sessionEnd = 0;
@@ -78,7 +77,7 @@ async function installPerformanceObservers(page: Page): Promise<void> {
         }
       }).observe({ type: "layout-shift", buffered: true });
     }
-    if (supports("event")) {
+    if (PerformanceObserver.supportedEntryTypes?.includes("event")) {
       const interactions = new Map<number, number>();
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
@@ -100,17 +99,16 @@ async function collectWebVitals(page: Page): Promise<WebVitals> {
     const paints = performance.getEntriesByType("paint");
     const fcp = paints.find((entry) => entry.name === "first-contentful-paint")?.startTime;
     const resources = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
-    const round = (value: number | undefined, digits = 0) => value === undefined ? undefined : Number(value.toFixed(digits));
     return {
-      lcpMs: round(observed?.lcpMs),
-      cls: round(observed?.cls ?? 0, 3),
-      inpMs: round(observed?.inpMs),
-      fcpMs: round(fcp),
-      ttfbMs: round(navigation ? navigation.responseStart - navigation.startTime : undefined),
-      domContentLoadedMs: round(navigation ? navigation.domContentLoadedEventEnd - navigation.startTime : undefined),
-      loadMs: round(navigation ? navigation.loadEventEnd - navigation.startTime : undefined),
+      lcpMs: observed?.lcpMs === undefined ? undefined : Math.round(observed.lcpMs),
+      cls: Math.round((observed?.cls ?? 0) * 1000) / 1000,
+      inpMs: observed?.inpMs === undefined ? undefined : Math.round(observed.inpMs),
+      fcpMs: fcp === undefined ? undefined : Math.round(fcp),
+      ttfbMs: navigation ? Math.round(navigation.responseStart - navigation.startTime) : undefined,
+      domContentLoadedMs: navigation ? Math.round(navigation.domContentLoadedEventEnd - navigation.startTime) : undefined,
+      loadMs: navigation ? Math.round(navigation.loadEventEnd - navigation.startTime) : undefined,
       resourceCount: resources.length,
-      transferSizeKb: round(resources.reduce((total, entry) => total + entry.transferSize, 0) / 1024, 1) ?? 0
+      transferSizeKb: Math.round(resources.reduce((total, entry) => total + entry.transferSize, 0) / 102.4) / 10
     };
   });
 }
@@ -196,37 +194,40 @@ async function auditPage(
 ): Promise<AuditSnapshot> {
   const viewport = devices[device];
   const domAudit = await page.evaluate(() => {
-    const selectorFor = (element: Element): string => {
-      if (element.id) return `#${CSS.escape(element.id)}`;
+    const inspected = Array.from(
+      document.querySelectorAll<HTMLElement>("main *, img:not([alt]), button, input, textarea, select")
+    ).map((element) => {
       const testId = element.getAttribute("data-testid");
-      if (testId) return `[data-testid="${testId}"]`;
-      return element.tagName.toLowerCase();
-    };
-    const boxFor = (element: Element) => {
       const box = element.getBoundingClientRect();
-      return box.width && box.height
-        ? { x: Math.round(box.x), y: Math.round(box.y), width: Math.round(box.width), height: Math.round(box.height) }
-        : undefined;
-    };
-    const missingAlt = Array.from(document.querySelectorAll("img:not([alt])")).map((element) => ({
-      selector: selectorFor(element), box: boxFor(element)
-    }));
-    const unlabeledControls = Array.from(document.querySelectorAll<HTMLElement>("button, input, textarea, select"))
-      .filter((element) => {
+      return {
+        element,
+        selector: element.id ? `#${CSS.escape(element.id)}` : testId ? `[data-testid="${testId}"]` : element.tagName.toLowerCase(),
+        box: box.width && box.height
+          ? { x: Math.round(box.x), y: Math.round(box.y), width: Math.round(box.width), height: Math.round(box.height) }
+          : undefined
+      };
+    });
+    const missingAlt = inspected
+      .filter(({ element }) => element.matches("img:not([alt])"))
+      .map(({ selector, box }) => ({ selector, box }));
+    const unlabeledControls = inspected
+      .filter(({ element }) => element.matches("button, input, textarea, select"))
+      .filter(({ element }) => {
         const text = (element.innerText || element.getAttribute("value") || "").trim();
         const label = element.getAttribute("aria-label") || element.getAttribute("title");
         const linked = element.id && document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
         return !text && !label && !linked;
       })
-      .map((element) => ({ selector: selectorFor(element), box: boxFor(element) }));
-    const clippedElements = Array.from(document.querySelectorAll<HTMLElement>("main *"))
-      .filter((element) => {
+      .map(({ selector, box }) => ({ selector, box }));
+    const clippedElements = inspected
+      .filter(({ element }) => element.matches("main *"))
+      .filter(({ element }) => {
         const style = getComputedStyle(element);
         const clips = ["hidden", "clip"].includes(style.overflow) || ["hidden", "clip"].includes(style.overflowX);
         return clips && (element.scrollWidth > element.clientWidth + 2 || element.scrollHeight > element.clientHeight + 2);
       })
       .slice(0, 10)
-      .map((element) => ({ selector: selectorFor(element), box: boxFor(element) }));
+      .map(({ selector, box }) => ({ selector, box }));
     return {
       horizontalOverflow: Math.max(0, document.documentElement.scrollWidth - window.innerWidth),
       missingAlt,

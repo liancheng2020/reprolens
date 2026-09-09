@@ -40,9 +40,9 @@ import type { AppConfig, CreateRunInput, DeviceName, Finding, QualityTrendPoint,
 import { VerificationPanel } from "./VerificationPanel";
 
 const defaultInput: CreateRunInput = {
-  url: "http://127.0.0.1:8787/demo/shop",
-  issue: "移动端点击“加入购物车”后，购物车数量没有更新，并且页面出现横向滚动。",
-  expected: "购物车数量更新为 1，页面不应出现横向滚动，并向用户展示明确的操作结果。",
+  url: "",
+  issue: "",
+  expected: "",
   devices: ["desktop", "iphone13", "pixel7"]
 };
 
@@ -113,7 +113,10 @@ function RunList({ runs, onSelect }: { runs: ReproRun[]; onSelect: (run: ReproRu
         <button key={run.id} className="run-row" onClick={() => onSelect(run)}>
           <span className={`run-status ${run.status}`}><span /></span>
           <span className="run-info"><strong>{run.input.issue}</strong><small>{formatTime(run.createdAt)} · {run.metrics.testedDevices} devices</small></span>
-          {run.score !== undefined ? <span className={`mini-score ${run.score >= 80 ? "good" : "bad"}`}>{run.score}</span> : <LoaderCircle className="spin" size={17} />}
+          {run.status === "failed" ? <span className="mini-score bad">失败</span>
+            : run.status === "running" || run.status === "queued" ? <LoaderCircle className="spin" size={17} aria-label={run.status === "queued" ? "排队中" : "运行中"} />
+              : run.score !== undefined ? <span className={`mini-score ${run.score >= 80 ? "good" : "bad"}`}>{run.score}</span>
+                : <span className="mini-score">完成</span>}
           <ChevronRight size={16} />
         </button>
       ))}
@@ -152,8 +155,8 @@ function Dashboard({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (config?.demoUrl) setInput((current) => ({ ...current, url: config.demoUrl, qualityGate: config.qualityGate }));
-  }, [config?.demoUrl, config?.qualityGate]);
+    if (config?.qualityGate) setInput((current) => ({ ...current, qualityGate: config.qualityGate }));
+  }, [config?.qualityGate]);
 
   const toggleDevice = (device: DeviceName) => {
     setInput((current) => ({
@@ -225,19 +228,18 @@ function Dashboard({
           <form className="run-form panel" onSubmit={submit}>
             <div className="panel-heading">
               <div><span className="section-kicker">NEW RUN</span><h3>创建复现任务</h3></div>
-              <span className="demo-badge">Demo ready</span>
             </div>
             <label>
               <span>目标页面</span>
-              <div className="input-shell"><Globe2 size={17} /><input value={input.url} onChange={(event) => setInput({ ...input, url: event.target.value })} placeholder="https://your-app.example.com" /></div>
+              <div className="input-shell"><Globe2 size={17} /><input type="url" required value={input.url} onChange={(event) => setInput({ ...input, url: event.target.value })} placeholder="https://your-app.example.com" /></div>
             </label>
             <label>
               <span>问题描述</span>
-              <textarea rows={4} value={input.issue} onChange={(event) => setInput({ ...input, issue: event.target.value })} />
+              <textarea required rows={4} value={input.issue} onChange={(event) => setInput({ ...input, issue: event.target.value })} placeholder="描述操作步骤和实际遇到的问题" />
             </label>
             <label>
               <span>期望结果</span>
-              <textarea rows={3} value={input.expected} onChange={(event) => setInput({ ...input, expected: event.target.value })} />
+              <textarea required rows={3} value={input.expected} onChange={(event) => setInput({ ...input, expected: event.target.value })} placeholder="描述完成操作后应出现的结果" />
             </label>
             <fieldset>
               <legend>测试设备</legend>
@@ -262,7 +264,7 @@ function Dashboard({
           <section className="recent panel">
             <div className="panel-heading"><div><span className="section-kicker">RECENT</span><h3>最近运行</h3></div><History size={19} /></div>
             {!runs.length ? (
-              <div className="empty-state"><div><SquareTerminal size={28} /></div><strong>还没有运行记录</strong><p>左侧已经填入演示任务，启动后将在这里保留完整证据。</p></div>
+              <div className="empty-state"><div><SquareTerminal size={28} /></div><strong>还没有运行记录</strong><p>填写左侧任务并启动复现后，即可在这里查看运行记录和证据。</p></div>
             ) : (
               <RunList runs={runs.slice(0, 6)} onSelect={onSelect} />
             )}

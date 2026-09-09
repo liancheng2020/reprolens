@@ -36,7 +36,7 @@ ReproLens 是一个可独立安装、运行和演示的开源项目，完整包�
 - 确定性给出 `improved`、`regressed`、`changed` 或 `unchanged` 验证结论。
 - 内置 Demo 自动预填修复版地址 `/demo/shop?fixed=1`，无需准备两个外部项目即可演示。
 
-最短体验路径：先运行首页预填的故障 Demo；任务完成后点击“验证修复”，系统会自动重放修复版并展示三联对比。
+最短体验路径：在工作台填写目标地址 `http://127.0.0.1:8787/demo/shop`、购物车问题描述与期望结果；任务完成后点击“验证修复”，系统会自动重放修复版并展示三联对比。
 
 ### v0.3.0 — GitHub 协作闭环
 
@@ -98,18 +98,14 @@ AI Provider   DeepSeek
 
 ## 快速开始
 
-前置条件：Node.js 20 或更高版本，推荐 Node.js 22。
+前置条件：Node.js 20 或更高版本，推荐 Node.js 22。以下命令在项目根目录执行，Windows PowerShell、macOS 和 Linux 通用。
 
-### Windows PowerShell
-
-```powershell
-cd E:\reprolens
+```sh
 npm install
 npm run browser:install
-Copy-Item .env.example .env
 ```
 
-编辑 `.env`，填写自己的 DeepSeek API Key：
+将 `.env.example` 复制为 `.env`（已有文件则跳过）：Windows 使用 `Copy-Item .env.example .env`，macOS / Linux 使用 `cp .env.example .env`。编辑 `.env` 填写：
 
 ```dotenv
 DEEPSEEK_API_KEY=your-key
@@ -117,32 +113,11 @@ DEEPSEEK_API_KEY=your-key
 
 启动开发环境：
 
-```powershell
+```sh
 npm run dev
 ```
 
-### macOS / Linux
-
-```bash
-cd /path/to/reprolens
-npm install
-npm run browser:install
-cp .env.example .env
-```
-
-编辑 `.env`，填写自己的 DeepSeek API Key：
-
-```dotenv
-DEEPSEEK_API_KEY=your-key
-```
-
-启动开发环境：
-
-```bash
-npm run dev
-```
-
-打开 [http://localhost:5173](http://localhost:5173)，首页已经预填内置 Demo，直接点击“启动可视化复现”。
+打开 [http://localhost:5173](http://localhost:5173)，填写目标页面、问题描述和期望结果，选择设备后点击“启动可视化复现”。表单默认空白。
 
 ## GitHub Actions 集成
 
@@ -182,16 +157,7 @@ REPROLENS_GITHUB_TOKEN=github-token
 
 ## 生产模式
 
-Windows PowerShell：
-
-```powershell
-npm run build
-npm start
-```
-
-macOS / Linux：
-
-```bash
+```sh
 npm run build
 npm start
 ```
@@ -282,7 +248,7 @@ reprolens/
 
 ## 验证
 
-```powershell
+```sh
 npm run check
 ```
 
