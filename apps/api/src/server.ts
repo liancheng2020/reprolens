@@ -10,6 +10,8 @@ import { GitHubService } from "./github/service.js";
 import { buildQualityTrends, defaultQualityGate } from "./quality.js";
 import { RunInputError, RunManager } from "./run-manager.js";
 import { RunStore } from "./store.js";
+import { DeepSeekProvider } from "./provider.js";
+import { reproPlanSchema } from "./repro-plan.js";
 
 const deviceSchema = z.enum(["desktop", "iphone13", "pixel7"]);
 const createRunSchema = z.object({
@@ -18,6 +20,8 @@ const createRunSchema = z.object({
   expected: z.string().trim().min(4, "请填写期望结果").max(2000),
   devices: z.array(deviceSchema).min(1).max(3),
   baselineRunId: z.string().uuid().optional(),
+  plan: reproPlanSchema.optional(),
+  planConfirmed: z.boolean().optional(),
   qualityGate: z.object({
     enabled: z.boolean(),
     minScore: z.number().int().min(0).max(100),
@@ -92,7 +96,7 @@ app.post("/api/runs", async (request, response, next) => {
   try {
     const parsed = createRunSchema.safeParse(request.body);
     if (!parsed.success) {
-      response.status(422).json({ error: "输入校验失败", details: parsed.error.flatten() });
+      response.status(422).json({ error: parsed.error.issues.map((issue) => issue.message).join("；"), details: parsed.error.flatten() });
       return;
     }
     const run = await manager.create(parsed.data);
@@ -100,6 +104,17 @@ app.post("/api/runs", async (request, response, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+app.post("/api/plans", async (request, response, next) => {
+  try {
+    const parsed = createRunSchema.omit({ plan: true, planConfirmed: true }).safeParse(request.body);
+    if (!parsed.success) {
+      response.status(422).json({ error: parsed.error.issues.map((issue) => issue.message).join("；") });
+      return;
+    }
+    response.json(await new DeepSeekProvider().createPlan(parsed.data));
+  } catch (error) { next(error); }
 });
 
 app.post("/api/runs/:id/verify", async (request, response, next) => {
@@ -127,6 +142,21 @@ app.post("/api/runs/:id/verify", async (request, response, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+app.post("/api/runs/:id/replan", async (request, response, next) => {
+  try {
+    const previous = await store.get(request.params.id);
+    if (!previous) { response.status(404).json({ error: "原任务不存在" }); return; }
+    const parsed = createRunSchema.safeParse(request.body);
+    if (!parsed.success || !parsed.data.plan || !parsed.data.planConfirmed) {
+      response.status(422).json({ error: parsed.success ? "请先确认复现计划" : parsed.error.issues.map((issue) => issue.message).join("；") });
+      return;
+    }
+    const source = previous.source ? { ...previous.source, publishStatus: "pending" as const, publishedAt: undefined, publishError: undefined } : undefined;
+    const run = await manager.create({ ...parsed.data, baselineRunId: undefined }, source);
+    response.status(202).json(run);
+  } catch (error) { next(error); }
 });
 
 app.get("/api/runs/:id", async (request, response, next) => {

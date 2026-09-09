@@ -1,4 +1,4 @@
-import type { AppConfig, CreateRunInput, QualityTrendPoint, ReproRun } from "./types";
+import type { AppConfig, CreateRunInput, QualityTrendPoint, ReproRun, ReproPlan } from "./types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -16,6 +16,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  createPlan: (input: CreateRunInput) => request<ReproPlan>("/api/plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }),
+  replanRun: (id: string, input: CreateRunInput) => request<ReproRun>(`/api/runs/${id}/replan`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }),
   config: () => request<AppConfig>("/api/config"),
   runs: () => request<ReproRun[]>("/api/runs"),
   qualityTrends: () => request<QualityTrendPoint[]>("/api/quality/trends"),

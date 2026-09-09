@@ -2,17 +2,18 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import axeCore from "axe-core";
 import { chromium, type Page } from "playwright";
-import { buildFindings, calculateConfidence, calculateScore } from "./analyzer.js";
+import { buildFindings, calculateScore } from "./analyzer.js";
+import { businessReport, executePlan, reportVerdict } from "./business.js";
+import { generateBusinessTest } from "./business-test.js";
+import type { BusinessReport, StepEvidence } from "./types.js";
 import { config } from "./config.js";
 import { DeepSeekProvider } from "./provider.js";
 import type {
-  AgentAction,
   AuditSnapshot,
   AxeViolation,
   CreateRunInput,
   DeviceName,
   Finding,
-  InteractiveElement,
   ScreenshotArtifact,
   WebVitals
 } from "./types.js";
@@ -24,6 +25,7 @@ export const devices: Record<DeviceName, { label: string; width: number; height:
 };
 
 interface ScannerCallbacks {
+  evidence?(evidence: StepEvidence): Promise<void>;
   step(title: string, detail?: string): Promise<void>;
   screenshot(artifact: ScreenshotArtifact): Promise<void>;
   finding(finding: Finding): Promise<void>;
@@ -34,7 +36,8 @@ export interface ScanResult {
   screenshots: ScreenshotArtifact[];
   score: number;
   verdict: "reproduced" | "not_reproduced" | "inconclusive";
-  confidence: number;
+  confidence?: number;
+  business: BusinessReport;
   summary: string;
   generatedTest: string;
   provider: "deepseek" | "deterministic";
@@ -147,43 +150,6 @@ async function collectAxeViolations(page: Page): Promise<AxeViolation[]> {
   }
 }
 
-async function interactiveElements(page: Page): Promise<InteractiveElement[]> {
-  return page.evaluate(() => {
-    const nodes = Array.from(document.querySelectorAll<HTMLElement>("button, input, textarea, select, a[href]"));
-    return nodes.slice(0, 50).map((node, index) => {
-      const id = `rf-${index + 1}`;
-      node.setAttribute("data-reprolens-id", id);
-      const labelledBy = node.getAttribute("aria-labelledby");
-      const linkedLabel = node.id ? document.querySelector(`label[for="${CSS.escape(node.id)}"]`)?.textContent : "";
-      const ariaLabelledText = labelledBy ? document.getElementById(labelledBy)?.textContent : "";
-      return {
-        id,
-        tag: node.tagName.toLowerCase(),
-        type: node.getAttribute("type") ?? "",
-        text: (node.innerText || node.textContent || "").trim().slice(0, 100),
-        label: (node.getAttribute("aria-label") || linkedLabel || ariaLabelledText || "").trim().slice(0, 100),
-        placeholder: (node.getAttribute("placeholder") || "").trim().slice(0, 100)
-      };
-    });
-  });
-}
-
-async function executeActions(page: Page, actions: AgentAction[], callbacks: ScannerCallbacks): Promise<void> {
-  for (const action of actions) {
-    await callbacks.step(`Agent：${action.reason}`, action.type === "wait" ? `等待 ${action.value ?? "500"}ms` : action.targetId);
-    try {
-      if (action.type === "wait") {
-        await page.waitForTimeout(Math.min(Number(action.value) || 500, 3000));
-      } else if (action.targetId) {
-        const target = page.locator(`[data-reprolens-id="${action.targetId}"]`).first();
-        if (action.type === "fill") await target.fill(action.value ?? "");
-        if (action.type === "click") await target.click({ timeout: 5000 });
-      }
-    } catch {
-      await callbacks.step("操作未成功，继续采集当前页面证据", action.reason);
-    }
-  }
-}
 
 async function auditPage(
   page: Page,
@@ -256,14 +222,23 @@ export class BrowserScanner {
     const startedAt = Date.now();
     const findings: Finding[] = [];
     const screenshots: ScreenshotArtifact[] = [];
-    let actions: AgentAction[] = [];
-    let referenceElements: InteractiveElement[] = [];
-    let usedDeepSeek = false;
+    const evidence: StepEvidence[] = [];
     let consoleErrorCount = 0;
     let networkErrorCount = 0;
     const qualityMetrics: Array<{ device: DeviceName; vitals: WebVitals }> = [];
     const artifactDir = path.join(config.artifactsDir, runId);
     await fs.mkdir(artifactDir, { recursive: true });
+
+    if (!input.plan || !input.planConfirmed) {
+      const business = businessReport(input, []);
+      return {
+        findings, screenshots, score: 100, verdict: "inconclusive", business,
+        summary: "证据不足：尚未确认业务复现计划。请在工作台生成并确认步骤，系统不会猜测操作或用页面质量问题代替复现。",
+        generatedTest: generateBusinessTest(input), provider: "deterministic",
+        durationMs: Date.now() - startedAt, consoleErrors: 0, networkErrors: 0,
+        accessibilityIssues: 0, performanceIssues: 0, qualityMetrics
+      };
+    }
 
     await callbacks.step("启动隔离浏览器", "Chromium / Playwright");
     const browser = await chromium.launch({ headless: config.headless });
@@ -292,21 +267,14 @@ export class BrowserScanner {
 
         await page.goto(input.url, { waitUntil: "domcontentloaded", timeout: 25_000 });
         await page.waitForTimeout(350);
-        const elements = await interactiveElements(page);
-
-        if (!actions.length) {
-          referenceElements = elements;
-          await callbacks.step("理解问题并规划复现路径", `发现 ${elements.length} 个可交互元素`);
-          const plan = await this.provider.planActions(input, elements);
-          actions = plan.actions;
-          usedDeepSeek = plan.provider === "deepseek";
-        }
-
-        await executeActions(page, actions, callbacks);
+        await callbacks.step("执行已确认的业务复现计划", input.plan.objective);
+        evidence.push(...await executePlan(page, input.plan, deviceName, artifactDir, runId, async (item) => {
+          await callbacks.evidence?.(item);
+        }));
         await page.waitForTimeout(300);
 
         const filename = `${deviceName}.png`;
-        await page.screenshot({ path: path.join(artifactDir, filename), fullPage: true });
+        await page.screenshot({ path: path.join(artifactDir, filename), fullPage: true, mask: [page.locator('input[type="password"]')], timeout: 4000 });
         const screenshot: ScreenshotArtifact = {
           id: `${runId}-${deviceName}`,
           label: `${device.label} · 操作后`,
@@ -332,20 +300,21 @@ export class BrowserScanner {
       await browser.close();
     }
 
-    await callbacks.step("汇总证据并生成回归测试", `${findings.length} 个结构化发现`);
-    const analysis = await this.provider.analyze(input, findings, actions, referenceElements);
-    usedDeepSeek = usedDeepSeek || analysis.provider === "deepseek";
-    const runtimeEvidence = findings.some((finding) => finding.category === "console" || finding.category === "network");
+    await callbacks.step("汇总业务断言与附加质量报告", `${evidence.length} 条步骤证据`);
+    const business = businessReport(input, evidence);
+    const verdict = reportVerdict(business);
+    const label = verdict === "reproduced" ? "目标问题已复现" : verdict === "not_reproduced" ? "此路径未复现" : "证据不足";
+    const failure = evidence.find((item) => item.status === "failed" || item.status === "blocked");
 
     return {
       findings,
       screenshots,
       score: calculateScore(findings),
-      verdict: runtimeEvidence ? "reproduced" : findings.length ? "inconclusive" : "not_reproduced",
-      confidence: calculateConfidence(findings),
-      summary: analysis.summary,
-      generatedTest: analysis.generatedTest,
-      provider: usedDeepSeek ? "deepseek" : "deterministic",
+      verdict,
+      business,
+      summary: `${label}。核心检查覆盖 ${business.covered}/${business.total}。${failure ? failure.title + "：" + failure.actual : input.plan.scope}。页面质量问题不参与业务结论。`,
+      generatedTest: generateBusinessTest(input),
+      provider: this.provider.configured ? "deepseek" : "deterministic",
       durationMs: Date.now() - startedAt,
       consoleErrors: consoleErrorCount,
       networkErrors: networkErrorCount,

@@ -1,5 +1,53 @@
 export type RunStatus = "queued" | "running" | "completed" | "failed";
 export type DeviceName = "desktop" | "iphone13" | "pixel7";
+
+export interface ReproTarget {
+  by: "label" | "placeholder" | "text" | "role" | "css";
+  value: string;
+  role?: "button" | "link" | "tab" | "textbox" | "checkbox" | "heading";
+}
+export interface ReproStep {
+  title: string;
+  action: "click" | "input" | "assert" | "reload";
+  phase: "setup" | "check";
+  target?: ReproTarget;
+  value?: string;
+  assertion?: "value" | "text" | "visible" | "hidden" | "enabled" | "editable" | "url" | "response";
+  requestPath?: string;
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  statusCode?: number;
+  responseField?: string;
+  allowSideEffect: boolean;
+}
+export interface ReproPlan {
+  version: 1;
+  objective: string;
+  scope: string;
+  warnings: string[];
+  steps: ReproStep[];
+}
+export interface StepEvidence {
+  device: DeviceName;
+  index: number;
+  title: string;
+  phase: "setup" | "check";
+  status: "passed" | "failed" | "blocked" | "skipped";
+  expected: string;
+  actual: string;
+  detail?: string;
+  beforeUrl?: string;
+  afterUrl?: string;
+  target?: ReproTarget;
+}
+export interface BusinessReport {
+  version: 1;
+  steps: StepEvidence[];
+  devices: Array<{ device: DeviceName; verdict: "reproduced" | "not_reproduced" | "inconclusive" }>;
+  covered: number;
+  total: number;
+  testStatus: "draft" | "generated";
+}
+
 export type VerificationStatus = "improved" | "regressed" | "changed" | "unchanged";
 export type GitHubPublishStatus = "pending" | "publishing" | "published" | "failed";
 
@@ -20,6 +68,8 @@ export interface GitHubRunSource {
 }
 
 export interface CreateRunInput {
+  plan?: ReproPlan;
+  planConfirmed?: boolean;
   url: string;
   issue: string;
   expected: string;
@@ -123,6 +173,7 @@ export interface VerificationResult {
 }
 
 export interface ReproRun {
+  business?: BusinessReport;
   id: string;
   createdAt: string;
   completedAt?: string;

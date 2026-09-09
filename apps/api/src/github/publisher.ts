@@ -5,6 +5,11 @@ import type { RepositoryConfig } from "./types.js";
 export const REPORT_MARKER = "<!-- reprolens-report -->";
 
 export function checkConclusion(run: ReproRun): "success" | "failure" | "neutral" {
+  if (run.business) {
+    if (run.status === "failed" || run.verdict === "reproduced") return "failure";
+    if (run.verdict !== "not_reproduced" || !run.business.total || run.business.covered !== run.business.total) return "neutral";
+    return run.quality?.gate.status === "failed" ? "failure" : "success";
+  }
   if (run.status === "failed" || run.verdict === "reproduced" || run.verification?.status === "regressed" || run.quality?.gate.status === "failed") return "failure";
   if (run.verdict === "not_reproduced" || run.verification?.status === "improved") return "success";
   return "neutral";
@@ -33,7 +38,7 @@ export function buildGitHubReport(run: ReproRun): string {
 | --- | --- |
 | 状态 | **${verdict}** |
 | 质量评分 | ${run.score ?? "—"} / 100 |
-| 置信度 | ${run.confidence ?? "—"}% |
+| 核心检查覆盖 | ${run.business ? run.business.covered + "/" + run.business.total : "旧版记录：未验证业务断言"} |
 | 测试设备 | ${run.input.devices.join(", ")} |
 | 运行编号 | \`${run.id}\` |
 
@@ -41,7 +46,11 @@ ${run.summary ?? run.error ?? "任务已完成。"}
 ${verification}
 ${quality}
 
-### 关键发现
+### 业务检查
+
+${run.business?.steps.map((step) => "- **" + step.device + " · " + step.title.replace(/[\r\n]/g, " ") + "**：" + step.status + "；期望 " + step.expected.replace(/[\r\n]/g, " ") + "；实际 " + step.actual.replace(/[\r\n]/g, " ")).join("\n") || "没有已确认的业务检查证据，请在工作台编辑计划并重新复现。"}
+
+### 附加页面质量发现（不参与业务复现结论）
 
 ${findings}
 
@@ -49,7 +58,7 @@ ${findings}
 
 - 截图：${run.screenshots.length} 张
 - 视觉对比：${run.verification?.comparisons.length ?? 0} 组 Before / After / Diff
-- Playwright 回归测试：${run.generatedTest ? "已生成" : "未生成"}
+- Playwright 回归测试：${run.business?.testStatus === "generated" ? "已生成，尚未自动重跑验证" : "草稿 / 尚未验证"}
 
 > 完整截图、Diff、JSON 与测试文件请从对应 GitHub Actions 运行的 Artifacts 下载。
 

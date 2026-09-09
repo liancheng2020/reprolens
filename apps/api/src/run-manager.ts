@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { Response } from "express";
 import { config } from "./config.js";
 import { DeepSeekProvider } from "./provider.js";
+import { businessReport } from "./business.js";
+import { reproPlanSchema } from "./repro-plan.js";
 import { buildQualityReport } from "./quality.js";
 import { BrowserScanner } from "./scanner.js";
 import { RunStore } from "./store.js";
@@ -24,6 +26,11 @@ export class RunManager {
   }
 
   async create(input: CreateRunInput, source?: GitHubRunSource): Promise<ReproRun> {
+    if (input.plan) {
+      const parsed = reproPlanSchema.safeParse(input.plan);
+      if (!parsed.success) throw new RunInputError(parsed.error.issues.map((issue) => issue.message).join("；"));
+      input = { ...input, plan: parsed.data };
+    }
     if (input.baselineRunId) await this.validateBaseline(input);
     const now = new Date().toISOString();
     const run: ReproRun = {
@@ -35,6 +42,7 @@ export class RunManager {
       provider: this.provider.configured ? "deepseek" : "deterministic",
       model: this.provider.configured ? config.deepseekModel : undefined,
       timeline: [],
+      business: businessReport(input, []),
       findings: [],
       screenshots: [],
       metrics: {
@@ -124,6 +132,10 @@ export class RunManager {
 
     try {
       const result = await this.scanner.scan(run.id, run.input, {
+        evidence: async (item) => {
+          run.business = businessReport(run.input, [...(run.business?.steps ?? []), item]);
+          await this.push(run, "step", item.title, item.actual, item.status === "failed" ? "error" : item.status === "blocked" ? "warning" : "success");
+        },
         step: async (title, detail) => this.push(run, "step", title, detail, "success"),
         screenshot: async (artifact: ScreenshotArtifact) => {
           run.screenshots.push(artifact);
@@ -141,7 +153,8 @@ export class RunManager {
         }
       });
 
-      run.score = result.score;
+      run.score = result.qualityMetrics.length ? result.score : undefined;
+      run.business = result.business;
       run.verdict = result.verdict;
       run.confidence = result.confidence;
       run.summary = result.summary;
@@ -155,8 +168,8 @@ export class RunManager {
         performanceIssues: result.performanceIssues,
         testedDevices: run.input.devices.length
       };
-      run.quality = buildQualityReport(run.findings, result.score, result.qualityMetrics, run.input.qualityGate);
-      await this.push(
+      run.quality = result.qualityMetrics.length ? buildQualityReport(run.findings, result.score, result.qualityMetrics, run.input.qualityGate) : undefined;
+      if (run.quality) await this.push(
         run,
         "step",
         `质量门禁${run.quality.gate.status === "failed" ? "未通过" : run.quality.gate.status === "passed" ? "已通过" : "未启用"}`,
@@ -185,7 +198,7 @@ export class RunManager {
       run.status = "completed";
       run.completedAt = new Date().toISOString();
       run.currentStep = "分析完成";
-      await this.push(run, "complete", "分析完成", `${result.findings.length} 个发现 · 质量评分 ${result.score}`, "success");
+      await this.push(run, "complete", "业务验证完成", `${result.verdict} · 核心覆盖 ${result.business.covered}/${result.business.total}`, "success");
     } catch (error) {
       run.status = "failed";
       run.completedAt = new Date().toISOString();

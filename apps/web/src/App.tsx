@@ -38,6 +38,8 @@ import { GitHubImport } from "./GitHubImport";
 import { GitHubSourceCard } from "./GitHubSourceCard";
 import type { AppConfig, CreateRunInput, DeviceName, Finding, QualityTrendPoint, ReproRun, WebVitals } from "./types";
 import { VerificationPanel } from "./VerificationPanel";
+import { BusinessEvidence, PlanEditor, verdictLabels } from "./Business";
+import type { ReproPlan } from "./types";
 
 const defaultInput: CreateRunInput = {
   url: "",
@@ -115,8 +117,7 @@ function RunList({ runs, onSelect }: { runs: ReproRun[]; onSelect: (run: ReproRu
           <span className="run-info"><strong>{run.input.issue}</strong><small>{formatTime(run.createdAt)} · {run.metrics.testedDevices} devices</small></span>
           {run.status === "failed" ? <span className="mini-score bad">失败</span>
             : run.status === "running" || run.status === "queued" ? <LoaderCircle className="spin" size={17} aria-label={run.status === "queued" ? "排队中" : "运行中"} />
-              : run.score !== undefined ? <span className={`mini-score ${run.score >= 80 ? "good" : "bad"}`}>{run.score}</span>
-                : <span className="mini-score">完成</span>}
+              : <span className={`business-badge ${run.business ? run.verdict : ""}`}>{run.business ? verdictLabels[run.verdict ?? "inconclusive"] : "旧版扫描"}</span>}
           <ChevronRight size={16} />
         </button>
       ))}
@@ -140,23 +141,32 @@ function Topbar({ title, subtitle, config }: { title: string; subtitle: string; 
 }
 
 function Dashboard({
+  retryRun,
   runs,
   config,
   onCreated,
   onSelect
 }: {
+  retryRun?: ReproRun;
   runs: ReproRun[];
   config?: AppConfig;
   onCreated: (run: ReproRun) => void;
   onSelect: (run: ReproRun) => void;
 }) {
-  const [input, setInput] = useState<CreateRunInput>(defaultInput);
+  const [input, setInput] = useState<CreateRunInput>(retryRun ? { ...retryRun.input, baselineRunId: undefined, plan: undefined, planConfirmed: false } : defaultInput);
+  const [plan, setPlan] = useState<ReproPlan | undefined>(retryRun?.input.plan);
+  const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (config?.qualityGate) setInput((current) => ({ ...current, qualityGate: config.qualityGate }));
   }, [config?.qualityGate]);
+
+  // Editing the original request invalidates its confirmed plan; remounting a retry does not.
+  const changeRequest = (change: Partial<CreateRunInput>) => {
+    setInput(current => ({ ...current, ...change })); setPlan(undefined); setConfirmed(false);
+  };
 
   const toggleDevice = (device: DeviceName) => {
     setInput((current) => ({
@@ -176,7 +186,14 @@ function Dashboard({
     }
     setSubmitting(true);
     try {
-      onCreated(await api.createRun(input));
+      if (!plan) {
+        setPlan(await api.createPlan(input));
+        setConfirmed(false);
+      } else {
+        if (!confirmed) { setError("请核对并确认复现计划"); return; }
+        const payload = { ...input, plan, planConfirmed: true };
+        onCreated(retryRun ? await api.replanRun(retryRun.id, payload) : await api.createRun(payload));
+      }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "创建任务失败");
     } finally {
@@ -185,7 +202,7 @@ function Dashboard({
   };
 
   const completed = runs.filter((run) => run.status === "completed");
-  const reproduced = completed.filter((run) => run.verdict === "reproduced").length;
+  const reproduced = completed.filter((run) => run.business && run.verdict === "reproduced").length;
   const averageScore = completed.length
     ? Math.round(completed.reduce((total, run) => total + (run.score ?? 0), 0) / completed.length)
     : 0;
@@ -198,7 +215,7 @@ function Dashboard({
           <div className="hero-copy">
             <div className="eyebrow"><Sparkles size={15} /> Browser QA Agent</div>
             <h2>从一句问题描述，<br /><span>抵达可复现的真相。</span></h2>
-            <p>ReproLens 自动理解问题、操作真实浏览器、跨设备采集证据，并生成可提交的 Playwright 回归测试。</p>
+            <p>明确复现目标，确认操作与业务检查项。ReproLens 操作真实浏览器，展示期望与实际结果，并生成回归测试。</p>
             <div className="hero-proof">
               <span><ShieldCheck size={17} /> 受限动作</span>
               <span><Eye size={17} /> 全程可见</span>
@@ -231,15 +248,15 @@ function Dashboard({
             </div>
             <label>
               <span>目标页面</span>
-              <div className="input-shell"><Globe2 size={17} /><input type="url" required value={input.url} onChange={(event) => setInput({ ...input, url: event.target.value })} placeholder="https://your-app.example.com" /></div>
+              <div className="input-shell"><Globe2 size={17} /><input type="url" required value={input.url} onChange={(event) => changeRequest({ url: event.target.value })} placeholder="https://your-app.example.com" /></div>
             </label>
             <label>
               <span>问题描述</span>
-              <textarea required rows={4} value={input.issue} onChange={(event) => setInput({ ...input, issue: event.target.value })} placeholder="描述操作步骤和实际遇到的问题" />
+              <textarea required rows={4} value={input.issue} onChange={(event) => changeRequest({ issue: event.target.value })} placeholder="描述操作步骤和实际遇到的问题" />
             </label>
             <label>
               <span>期望结果</span>
-              <textarea required rows={3} value={input.expected} onChange={(event) => setInput({ ...input, expected: event.target.value })} placeholder="描述完成操作后应出现的结果" />
+              <textarea required rows={3} value={input.expected} onChange={(event) => changeRequest({ expected: event.target.value })} placeholder="描述完成操作后应出现的结果" />
             </label>
             <fieldset>
               <legend>测试设备</legend>
@@ -253,10 +270,13 @@ function Dashboard({
                 ))}
               </div>
             </fieldset>
+            {plan && <PlanEditor plan={plan} onChange={(next) => { setPlan(next); setConfirmed(false); }} />}
+            {plan && <label className="plan-consent"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /><span>我已核对目标页面、定位方式、测试数据和核心检查项；所有未覆盖的期望已在范围中明确排除。</span></label>}
+            {plan && <button type="button" className="secondary-button" disabled={submitting} onClick={() => { setPlan(undefined); setConfirmed(false); }}>重新生成计划</button>}
             {error && <div className="form-error"><AlertTriangle size={15} /> {error}</div>}
-            <button className="primary-button" disabled={submitting}>
+            <button className="primary-button" disabled={submitting || Boolean(plan && !confirmed)}>
               {submitting ? <LoaderCircle className="spin" size={18} /> : <Play size={18} fill="currentColor" />}
-              {submitting ? "正在创建任务" : "启动可视化复现"}
+              {submitting ? (plan ? "正在创建任务" : "正在生成复现计划") : plan ? "按确认计划执行" : "生成复现计划"}
               {!submitting && <ChevronRight size={17} />}
             </button>
           </form>
@@ -266,7 +286,7 @@ function Dashboard({
             {!runs.length ? (
               <div className="empty-state"><div><SquareTerminal size={28} /></div><strong>还没有运行记录</strong><p>填写左侧任务并启动复现后，即可在这里查看运行记录和证据。</p></div>
             ) : (
-              <RunList runs={runs.slice(0, 6)} onSelect={onSelect} />
+              <RunList runs={runs.slice(0, 7)} onSelect={onSelect} />
             )}
           </section>
         </section>
@@ -425,7 +445,7 @@ function FindingCard({ finding }: { finding: Finding }) {
   );
 }
 
-function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { run: ReproRun; config?: AppConfig; onBack: () => void; onRefresh: () => void; onVerify: (url: string) => Promise<void>; onPublish: () => Promise<void> }) {
+function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onReplan }: { run: ReproRun; config?: AppConfig; onBack: () => void; onRefresh: () => void; onVerify: (url: string) => Promise<void>; onPublish: () => Promise<void>; onReplan: () => void }) {
   const [activeDevice, setActiveDevice] = useState<DeviceName>(run.screenshots[0]?.device ?? run.input.devices[0]);
   const [copied, setCopied] = useState(false);
   const screenshot = run.screenshots.find((item) => item.device === activeDevice) ?? run.screenshots.at(-1);
@@ -460,21 +480,21 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { ru
             <div className={`verdict-icon ${run.verdict ?? "running"}`}>
               {isRunning ? <LoaderCircle className="spin" size={25} /> : run.verdict === "reproduced" ? <AlertTriangle size={25} /> : <CheckCircle2 size={25} />}
             </div>
-            <div><span className="section-kicker">{isRunning ? "AGENT IS WORKING" : "VERIFICATION RESULT"}</span><h2>{isRunning ? run.currentStep : run.verdict === "reproduced" ? "问题已复现" : "验证已完成"}</h2><p>{run.summary ?? run.input.issue}</p></div>
+            <div><span className="section-kicker">{isRunning ? "AGENT IS WORKING" : "BUSINESS VERIFICATION"}</span><h2>{isRunning ? run.currentStep : run.status === "failed" ? "执行失败" : run.business ? verdictLabels[run.verdict ?? "inconclusive"] : "旧版页面质量扫描"}</h2><p>{run.error ?? run.summary ?? run.input.issue}</p></div>
           </div>
           <div className="overview-meta">
-            <div><span>置信度</span><strong>{run.confidence ?? "—"}{run.confidence ? "%" : ""}</strong></div>
+            <div><span>核心覆盖</span><strong>{run.business ? `${run.business.covered}/${run.business.total}` : "旧版"}</strong></div>
             <div><span>耗时</span><strong>{formatDuration(run.metrics.durationMs)}</strong></div>
             <div><span>引擎</span><strong>{run.provider === "deepseek" ? "DeepSeek" : "Rules"}</strong></div>
           </div>
-          <ScoreRing score={run.score} />
+          {!isRunning && <button className="secondary-button" onClick={onReplan}>编辑计划并重新复现</button>}
         </section>
 
         <GitHubSourceCard run={run} canPublish={Boolean(config?.github.configured)} onPublish={onPublish} />
 
         <VerificationPanel run={run} activeDevice={activeDevice} onVerify={onVerify} />
 
-        <QualityPanel run={run} activeDevice={activeDevice} />
+        <BusinessEvidence report={run.business} />
 
         <section className="inspect-grid">
           <div className="browser-panel panel">
@@ -521,20 +541,21 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { ru
 
         <section className="result-grid">
           <div className="findings-panel panel">
-            <div className="panel-heading"><div><span className="section-kicker">EVIDENCE</span><h3>结构化发现</h3></div><span className="finding-count">{run.findings.length}</span></div>
-            {run.findings.length ? <div className="finding-list">{run.findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div> : <div className="empty-mini"><Eye size={24} /><span>{isRunning ? "采集完成后将在这里展示证据" : "当前路径未发现异常"}</span></div>}
+            <details><summary className="panel-heading"><div><span className="section-kicker">ADDITIONAL QUALITY</span><h3>附加页面质量问题（不代表目标 Bug）</h3></div><span className="finding-count">{run.findings.length}</span></summary>
+            {run.findings.length ? <div className="finding-list">{run.findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div> : <div className="empty-mini"><Eye size={24} /><span>暂无附加质量发现</span></div>}</details>
           </div>
 
           <div className="code-panel panel">
             <div className="panel-heading"><div><span className="section-kicker">DELIVERABLE</span><h3>回归测试</h3></div>{run.generatedTest && <button className="copy-button" onClick={copyCode}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "已复制" : "复制"}</button>}</div>
             {run.generatedTest ? (
-              <pre><code>{run.generatedTest}</code></pre>
+              <><p className="plan-help">{run.business?.testStatus === "generated" ? "已按计划生成，尚未自动重跑验证" : "测试草稿 / 旧版测试，尚不能证明目标问题"}。故障版应失败，修复版应通过。</p><pre><code>{run.generatedTest}</code></pre></>
             ) : (
               <div className="code-placeholder"><FileCode2 size={28} /><strong>等待测试生成</strong><span>完成复现后，Agent 将交付可执行的 Playwright 测试。</span></div>
             )}
           </div>
         </section>
 
+        <details className="quality-disclosure panel"><summary>附加页面质量报告 · 与业务复现独立</summary><QualityPanel run={run} activeDevice={activeDevice} /></details>
         <section className="metrics-strip panel">
           <div><Monitor size={18} /><span>设备</span><strong>{run.metrics.testedDevices}</strong></div>
           <div><SquareTerminal size={18} /><span>Console errors</span><strong>{run.metrics.consoleErrors}</strong></div>
@@ -549,6 +570,7 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish }: { ru
 }
 
 export default function App() {
+  const [retryRun, setRetryRun] = useState<ReproRun>();
   const [config, setConfig] = useState<AppConfig>();
   const [runs, setRuns] = useState<ReproRun[]>([]);
   const [trends, setTrends] = useState<QualityTrendPoint[]>([]);
@@ -596,13 +618,14 @@ export default function App() {
   return (
     <Shell
       activeView={view}
-      onHome={() => { setView("dashboard"); setSelected(undefined); }}
+      onHome={() => { setView("dashboard"); setSelected(undefined); setRetryRun(undefined); }}
       onHistory={() => { setView("history"); setSelected(undefined); void api.qualityTrends().then(setTrends).catch(() => undefined); }}
       config={config}
     >
       {selected ? (
         <RunDetail
           run={selected}
+          onReplan={() => { setRetryRun(selected); setSelected(undefined); setView("dashboard"); }}
           config={config}
           onBack={() => setSelected(undefined)}
           onRefresh={() => void api.run(selected.id).then(setSelected)}
@@ -621,6 +644,7 @@ export default function App() {
         <RunHistory runs={sortedRuns} trends={trends} config={config} onSelect={setSelected} />
       ) : (
         <Dashboard
+          retryRun={retryRun}
           runs={sortedRuns}
           config={config}
           onCreated={(run) => { setRuns((current) => [run, ...current]); setSelected(run); }}

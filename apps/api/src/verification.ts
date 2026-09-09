@@ -23,8 +23,8 @@ function summaryFor(status: VerificationStatus, resolved: number, introduced: nu
   const score = scoreDelta === 0 ? "评分不变" : `评分${scoreDelta > 0 ? "提升" : "下降"} ${Math.abs(scoreDelta)} 分`;
   const detail = `解决 ${resolved} 类问题，引入 ${introduced} 类问题，${score}。`;
   const lead: Record<VerificationStatus, string> = {
-    improved: "修复验证通过，当前版本的可验证问题有所减少。",
-    regressed: "修复验证发现回归，当前版本出现了更多问题。",
+    improved: "附加页面质量改善；不代表目标业务问题已经修复。",
+    regressed: "附加页面质量下降；业务结论请查看核心检查。",
     changed: "页面视觉发生变化，但质量指标没有明确改善。",
     unchanged: "页面与基线基本一致，暂未观察到有效修复。"
   };

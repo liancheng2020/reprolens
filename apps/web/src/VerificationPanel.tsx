@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle2, GitCompare, Image, LoaderCircle, RotateCcw, T
 import type { DeviceName, ReproRun, VerificationStatus } from "./types";
 
 const statusCopy: Record<VerificationStatus, { label: string; icon: typeof CheckCircle2 }> = {
-  improved: { label: "修复有效", icon: CheckCircle2 },
+  improved: { label: "页面质量改善", icon: CheckCircle2 },
   regressed: { label: "发现回归", icon: TriangleAlert },
   changed: { label: "视觉已变化", icon: GitCompare },
   unchanged: { label: "基本无变化", icon: RotateCcw }
@@ -39,7 +39,7 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
   const comparison = verification?.comparisons.find((item) => item.device === activeDevice)
     ?? verification?.comparisons[0];
 
-  if (run.status !== "completed") return null;
+  if (run.status !== "completed" || !run.input.planConfirmed || !run.screenshots.length) return null;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -58,8 +58,8 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
       <div className="verification-heading">
         <div>
           <span className="section-kicker">FIX VERIFICATION</span>
-          <h3>{verification ? "Before / After 修复验证" : "用当前运行创建修复基线"}</h3>
-          <p>{verification?.summary ?? "修复完成后输入新地址，ReproLens 会重放相同路径并生成逐像素证据。"}</p>
+          <h3>{verification ? "Before / After 附加视觉对比" : "重放已确认计划验证修复"}</h3>
+          <p>业务是否修复以核心检查为准。下方视觉变化仅供辅助参考。请仅重放到已授权的测试站点。</p>
         </div>
         {verification && (() => {
           const StatusIcon = statusCopy[verification.status].icon;

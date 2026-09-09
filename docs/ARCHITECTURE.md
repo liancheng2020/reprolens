@@ -1,5 +1,7 @@
 # ReproLens 架构
 
+> v0.5 当前设计见 [业务断言设计说明](VERSIONS.md#v0-5-design)。下文保留历史架构演进；当前主路径由确认计划驱动，不再使用盲目动作降级或 Console/Network 错误直接判定复现。
+
 ## 总览
 
 ```text
