@@ -9,6 +9,18 @@ ReproLens 是一个面向前端开发者、测试工程师和开源维护者的�
 [![Playwright](https://img.shields.io/badge/Playwright-browser_worker-2EAD33)](https://playwright.dev/)
 [![License](https://img.shields.io/badge/license-MIT-8CF7C7)](LICENSE)
 
+## 操作演示
+
+[![点击观看 ReproLens 真实操作演示](docs/media/reprolens-demo-poster.png)](docs/media/reprolens-demo.webm)
+
+**[▶ 观看 / 下载操作视频（约 41 秒，3.6 MB，WebM）](docs/media/reprolens-demo.webm)**
+
+输入框无法输入 → 确认业务检查计划 → 真实 Chromium 执行 → 查看只读状态与失败证据 → 修复后重放同一计划 → 核心检查通过。
+
+这是本地完整版的真实操作录屏，不是预置结果展示。视频带中文步骤字幕、无配音，使用无 Key 安全模板并人工确认定位，不演示 DeepSeek 规划能力；“此路径未复现”不等于全站无 Bug，生成的回归测试也不等于已经运行验证。如果 GitHub 客户端无法直接播放，请下载后使用浏览器或播放器打开。
+
+项目以本地运行方式交付，不提供在线任务提交服务。重新录制：完成下方依赖和 Chromium 安装后，在仓库根目录运行 `npm run build`、`node scripts/record-demo.mjs`。脚本启动隔离的本地 API 和测试页面，不调用模型，不读取或覆盖已有任务；录屏及封面更新到 `docs/media`，执行证据保留在终端输出的临时目录。
+
 ## 当前版本：v0.5.0
 
 当前主流程：填写问题 → 生成并编辑复现计划 → 确认目标与业务检查项 → 按步骤执行 → 查看期望/实际证据。页面质量检查为附加报告，不再用于判断指定 Bug 是否复现。

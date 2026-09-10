@@ -541,8 +541,8 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
 
         <section className="result-grid">
           <div className="findings-panel panel">
-            <details><summary className="panel-heading"><div><span className="section-kicker">ADDITIONAL QUALITY</span><h3>附加页面质量问题（不代表目标 Bug）</h3></div><span className="finding-count">{run.findings.length}</span></summary>
-            {run.findings.length ? <div className="finding-list">{run.findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div> : <div className="empty-mini"><Eye size={24} /><span>暂无附加质量发现</span></div>}</details>
+            <div className="panel-heading"><div><span className="section-kicker">ADDITIONAL QUALITY</span><h3>附加页面质量问题（不代表目标 Bug）</h3></div><span className="finding-count">{run.findings.length}</span></div>
+            {run.findings.length ? <div className="finding-list">{run.findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div> : <div className="empty-mini"><Eye size={24} /><span>暂无附加质量发现</span></div>}
           </div>
 
           <div className="code-panel panel">
