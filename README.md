@@ -1,8 +1,8 @@
 # ReproLens
 
-> 将模糊的 Web Bug 报告转化为可复现证据、页面质量报告、像素 Diff 和回归测试。
+> 将 Web Bug 描述转化为可确认的业务检查、真实浏览器证据和回归测试。
 
-ReproLens 是一个面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现与页面质量分析工具。输入目标页面、问题描述和期望结果，它会操作真实 Chromium，在多种设备尺寸下采集截图、WCAG、Web Vitals、Console 与 Network 证据，最后交付质量门禁、结构化报告、像素 Diff 和 Playwright 回归测试。
+面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现工具。输入目标页面、问题与期望结果，确认计划后由 Playwright 执行，并展示每一步的期望、实际结果和截图。
 
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-5FA04E)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-visual_dashboard-61DAFB)](https://react.dev/)
@@ -13,293 +13,72 @@ ReproLens 是一个面向前端开发者、测试工程师和开源维护者的�
 
 [![点击观看 ReproLens 真实操作演示](docs/media/reprolens-demo-poster.png)](docs/media/reprolens-demo.webm)
 
-**[▶ 观看 / 下载操作视频（约 41 秒，3.6 MB，WebM）](docs/media/reprolens-demo.webm)**
+[▶ 观看 / 下载视频（约 41 秒，WebM）](docs/media/reprolens-demo.webm)
 
-输入框无法输入 → 确认业务检查计划 → 真实 Chromium 执行 → 查看只读状态与失败证据 → 修复后重放同一计划 → 核心检查通过。
+输入框无法输入 → 确认计划 → 真实执行 → 查看失败证据 → 修复后重放 → 核心检查通过。
 
-这是本地完整版的真实操作录屏，不是预置结果展示。视频带中文步骤字幕、无配音，使用无 Key 安全模板并人工确认定位，不演示 DeepSeek 规划能力；“此路径未复现”不等于全站无 Bug，生成的回归测试也不等于已经运行验证。如果 GitHub 客户端无法直接播放，请下载后使用浏览器或播放器打开。
-
-项目以本地运行方式交付，不提供在线任务提交服务。重新录制：完成下方依赖和 Chromium 安装后，在仓库根目录运行 `npm run build`、`node scripts/record-demo.mjs`。脚本启动隔离的本地 API 和测试页面，不调用模型，不读取或覆盖已有任务；录屏及封面更新到 `docs/media`，执行证据保留在终端输出的临时目录。
+视频使用本地真实 API 和 Chromium，带中文字幕、无配音；采用无 Key 安全模板并人工确认定位，不演示模型规划。如果无法直接播放，请下载后打开。
 
 ## 当前版本：v0.5.0
 
-当前主流程：填写问题 → 生成并编辑复现计划 → 确认目标与业务检查项 → 按步骤执行 → 查看期望/实际证据。页面质量检查为附加报告，不再用于判断指定 Bug 是否复现。
+**业务断言驱动的复现**：围绕用户指定的问题执行检查，页面质量报告只作为补充，不用于判断目标 Bug 是否复现。
 
-设计、限制与待验收项见 [v0.5 设计说明](docs/VERSIONS.md#v0-5-design)。本版已完成实现和构建检查，完整场景验收暂缓。
+- **确认计划**：编辑前置场景、目标控件、动作、测试值和核心检查项；DeepSeek 可辅助规划，无 Key 时提供待编辑的安全模板。
+- **真实执行**：支持键盘输入与失焦后值验证，以及文本、状态、URL 和受限响应检查；目标不唯一或前置条件失败时报告证据不足。
+- **可视化证据**：多设备截图、实时执行时间线，以及逐步的通过、失败、受阻和跳过状态。
+- **修复验证**：重放已确认的计划，检查修复后的业务结果，并提供 Before / After / Pixel Diff 辅助对比。
+- **测试与协作**：生成 Playwright 回归测试，支持 GitHub Issue 导入和结果发布；未确认计划的自动任务不能证明目标问题。
+- **附加质量报告**：WCAG、Web Vitals、Console / Network 证据、质量门禁与趋势。
 
-### v0.5.0 — 业务断言驱动的复现
-
-- 可编辑目标、前置场景、精确定位、操作步骤、测试值和核心检查项。
-- 每步重新定位；目标不唯一或前置条件失败时停止，明确报告证据不足。
-- 键盘输入、失焦后值验证；支持文本、状态、URL 和受限响应检查。
-- 按设备显示通过、失败、受阻、跳过与前后截图。
-- 基于确认计划生成回归测试，明确区分已生成和已验证。
-- 旧记录标识为旧版扫描；未确认计划的 GitHub 自动任务返回证据不足，可在工作台编辑后重跑。
-- 当前为用户确认的顺序计划，不具备动态分支重规划。定位建议未经页面观察，需用户核对。
-
-以下 v0.1–v0.4 内容为历史版本能力说明；与当前流程冲突时以 v0.5 说明为准。
-
-ReproLens 是一个可独立安装、运行和演示的开源项目，完整包含前端工作台、API、浏览器执行器、持久化和内置 Demo。项目采用需求驱动的小步迭代：每个版本聚焦一个可验收的用户闭环，并同步交付代码、测试和文档。
-
-### v0.1.0 — 核心复现闭环
-
-- 可视化任务创建：输入 URL、Bug 描述、期望结果和测试设备。
-- 多设备真实复现：Desktop、iPhone 13、Pixel 7。
-- Agent 动作规划：DeepSeek 根据问题和可交互元素规划受限操作。
-- 安全工具边界：模型只能选择 click、fill、wait，不能生成任意脚本。
-- 实时过程展示：SSE 推送浏览器启动、页面加载、Agent 操作、截图和发现。
-- 证据采集：全页截图、Console Error、Page Error、HTTP 4xx/5xx。
-- 确定性检测：横向溢出、图片替代文本、无名称控件、内容裁切。
-- 结构化结论：严重程度、问题类别、设备、证据和修复建议。
-- 回归测试生成：根据真实动作和失败证据生成 Playwright 测试。
-- 本地持久化：运行记录和证据刷新后仍可查看。
-- 无 Key 降级：DeepSeek 不可用时自动使用本地确定性规则。
-- 内置故障商城：安装后无需准备其他项目即可体验完整闭环。
-
-### v0.2.0 — 修复验证闭环
-
-- 任意已完成任务都可以一键设为基线，并对修复后的 URL 重放相同操作和设备矩阵。
-- 每个设备生成 Before、After、Pixel Diff 三联证据，不依赖模型判断像素变化。
-- 自动统计像素变化率、质量分变化、已解决问题和新引入问题。
-- 确定性给出 `improved`、`regressed`、`changed` 或 `unchanged` 验证结论。
-- 内置 Demo 自动预填修复版地址 `/demo/shop?fixed=1`，无需准备两个外部项目即可演示。
-
-最短体验路径：在工作台填写目标地址 `http://127.0.0.1:8787/demo/shop`、购物车问题描述与期望结果；任务完成后点击“验证修复”，系统会自动重放修复版并展示三联对比。
-
-### v0.3.0 — GitHub 协作闭环
-
-- 在可视化工作台粘贴 GitHub Issue URL，自动读取仓库、标题、正文、目标地址、期望结果和设备。
-- 支持通过 `needs-reproduction` 标签或手动执行 GitHub Actions 发起验证，无需部署公网服务。
-- 以 repository、issue、commit 作为幂等键，重复事件不会创建重复任务。
-- 创建独立 GitHub Check Run，执行时显示进行中，完成后回写 success、failure 或 neutral。
-- 在 Issue 中创建结构化证据报告；再次发布会更新同一条评论，不会重复刷屏。
-- 运行详情展示 Issue、提交、同步状态、Check 链接和重新发布入口。
-- Actions Artifacts 交付截图、Pixel Diff、完整 Run JSON、Markdown 报告和 Playwright 测试。
-- 提供 HMAC-SHA256 Webhook 校验，可选接入自托管服务。
-
-最短 GitHub 路径：在仓库 Issue 中填写 Target URL、Problem、Expected behavior 和 Device，添加 `needs-reproduction` 标签，Actions 会执行扫描并把报告同步回 Issue。
-
-### v0.4.0 — 页面质量分析闭环
-
-- 使用 axe-core 执行 WCAG 2 A/AA 审计，输出规则编号、DOM 选择器、元素坐标和修复建议。
-- 按 Desktop、iPhone 13、Pixel 7 分别采集 LCP、CLS、INP、FCP、TTFB、DOM Ready 和资源体积。
-- 根据稳定阈值生成性能问题和设备质量评分，不依赖模型判断指标是否合格。
-- 运行详情展示质量门禁、设备级 Web Vitals 和可执行修复建议。
-- 运行记录支持按页面查看评分趋势、问题类型累计和设备平均分。
-- GitHub Check 支持最低评分、高严重度、可访问性和性能问题上限，门禁失败自动阻断。
-- v0.1-v0.3 的历史 JSON 记录无需迁移，仍可正常查看。
-
-## 一次运行会发生什么
-
-```text
-问题描述 + 目标 URL + 设备
-              │
-              ▼
-      DeepSeek 规划安全动作
-              │
-              ▼
-       Playwright 操作页面
-              │
-      ┌───────┼────────┐
-      ▼       ▼        ▼
- Screenshot WCAG/Web Vitals Console/Network
-      └──────────┼──────────┘
-              ▼
-      确定性证据分析 + 质量门禁
-              │
-              ▼
- 可视化报告 + Playwright 回归测试
-```
-
-内置 Demo 的实测结果：
-
-```text
-状态          completed
-结论          reproduced
-质量评分      38 / 100
-复现置信度    94%
-测试设备      3
-截图          3
-结构化发现    11（跨设备展示，同一根因只扣分一次）
-AI Provider   DeepSeek
-```
+当前为用户确认的顺序计划，不支持动态分支重规划。定位建议需人工核对；“此路径未复现”不等于全站无 Bug，“已生成测试”不等于已运行验证。
 
 ## 快速开始
 
-前置条件：Node.js 20 或更高版本，推荐 Node.js 22。以下命令在项目根目录执行，Windows PowerShell、macOS 和 Linux 通用。
+需要 Node.js 20+（推荐 22）。以下命令在仓库根目录执行，Windows PowerShell、macOS 和 Linux 通用。
 
 ```sh
 npm install
 npm run browser:install
-```
-
-将 `.env.example` 复制为 `.env`（已有文件则跳过）：Windows 使用 `Copy-Item .env.example .env`，macOS / Linux 使用 `cp .env.example .env`。编辑 `.env` 填写：
-
-```dotenv
-DEEPSEEK_API_KEY=your-key
-```
-
-启动开发环境：
-
-```sh
 npm run dev
 ```
 
-打开 [http://localhost:5173](http://localhost:5173)，填写目标页面、问题描述和期望结果，选择设备后点击“启动可视化复现”。表单默认空白。
+打开 [http://localhost:5173](http://localhost:5173)，填写问题 → 点击“生成复现计划” → 编辑并确认检查项 → 点击“按确认计划执行”。
 
-## GitHub Actions 集成
+**可选模型配置**：将 `.env.example` 复制为 `.env`（已有则跳过），填写 `DEEPSEEK_API_KEY` 后启动或重启服务。不配置也能使用安全模板和浏览器执行。
 
-仓库已包含 [`.github/reprolens.yml`](.github/reprolens.yml) 和 [`.github/workflows/reprolens.yml`](.github/workflows/reprolens.yml)。Fork 后默认可用：
+复制命令：Windows 使用 `Copy-Item .env.example .env`；macOS / Linux 使用 `cp .env.example .env`。
 
-1. 在仓库 Settings → Actions → General 中允许工作流读写仓库。
-2. 如果需要 DeepSeek，在 Settings → Secrets and variables → Actions 新建 `DEEPSEEK_API_KEY`；不配置时使用本地确定性规则。
-3. 创建 Issue，并按模板填写可访问的 Target URL。
-4. 添加 `needs-reproduction` 标签，或在 Actions 页面手动运行工作流并填写 Issue 编号。
-5. 在 Issue 评论、Checks 和 Actions Artifacts 中查看结果。
-
-仓库级配置：
-
-```yaml
-triggerLabel: needs-reproduction
-devices: [desktop, iphone13, pixel7]
-publish:
-  issueComment: true
-  checkRun: true
-qualityGate:
-  enabled: true
-  minScore: 75
-  maxHighSeverityFindings: 0
-  maxAccessibilityIssues: 3
-  maxPerformanceIssues: 2
-```
-
-如果页面地址固定，也可在配置中增加 `targetUrl`。工作流仅声明 `contents: read`、`issues: write` 和 `checks: write` 权限；`GITHUB_TOKEN` 只用于当前仓库。
-
-本地工作台导入私有 Issue 或回写结果时，在 `.env` 配置：
-
-```dotenv
-REPROLENS_GITHUB_TOKEN=github-token
-```
-
-可选 Webhook 模式还需配置 `REPROLENS_GITHUB_WEBHOOK_SECRET`，并把 GitHub Webhook 地址设为 `/api/github/webhook`。公开 Issue 即使不配置 Token 也可手动导入，但不能发布评论或 Check。
-
-## 生产模式
+**构建后运行**：
 
 ```sh
 npm run build
 npm start
 ```
 
-打开 [http://127.0.0.1:8787](http://127.0.0.1:8787)。Node API 会同时托管构建后的前端页面。
+打开 [http://127.0.0.1:8787](http://127.0.0.1:8787)，API 同时托管前端。项目面向本地使用，不提供在线任务提交服务。
 
-## 项目结构
-
-```text
-reprolens/
-├─ apps/
-│  ├─ api/
-│  │  ├─ src/
-│  │  │  ├─ server.ts         HTTP、SSE、Demo 页面
-│  │  │  ├─ run-manager.ts    任务状态机与实时事件
-│  │  │  ├─ scanner.ts        Playwright 浏览器 Worker
-│  │  │  ├─ provider.ts       DeepSeek 规划、总结与降级
-│  │  │  ├─ analyzer.ts       确定性证据分析和评分
-│  │  │  ├─ quality.ts        质量门禁、设备评分和趋势
-│  │  │  ├─ verification.ts   修复效果判定
-│  │  │  ├─ visual-diff.ts    PNG 归一化与像素 Diff
-│  │  │  ├─ github/           Issue 解析、API 客户端、Webhook 与报告发布
-│  │  │  ├─ github-runner.ts  GitHub Actions 任务入口
-│  │  │  ├─ store.ts          JSON 持久化
-│  │  │  └─ demo-page.ts      自带故障演示商城
-│  │  └─ tests/
-│  └─ web/
-│     └─ src/
-│        ├─ App.tsx            工作台、运行详情和证据面板
-│        ├─ GitHubImport.tsx   Issue 导入面板
-│        ├─ GitHubSourceCard.tsx GitHub 同步状态卡片
-│        ├─ api.ts             API 与 SSE 客户端
-│        └─ styles.css         响应式视觉系统
-├─ artifacts/                  运行截图，Git 忽略
-├─ data/runs/                  任务记录，Git 忽略
-├─ docs/
-├─ .env.example
-└─ package.json
-```
-
-## API
-
-| Method | Path | 用途 |
-|---|---|---|
-| GET | `/health` | 服务与 Provider 状态 |
-| GET | `/api/config` | 前端运行配置 |
-| GET | `/api/runs` | 运行历史 |
-| GET | `/api/quality/trends` | 最近 30 次页面质量趋势，可按 URL 过滤 |
-| POST | `/api/runs` | 创建复现任务 |
-| POST | `/api/runs/:id/verify` | 以历史任务为基线验证修复 |
-| GET | `/api/runs/:id` | 查询单次运行 |
-| GET | `/api/runs/:id/events` | SSE 实时事件流 |
-| GET | `/api/github/status` | GitHub 集成状态，不返回 Token |
-| POST | `/api/github/issues/import` | 从 Issue 创建或复用任务 |
-| POST | `/api/github/runs/:id/publish` | 发布或更新 Issue 报告与 Check |
-| POST | `/api/github/webhook` | 接收带签名的 Issue 标签事件 |
-| GET | `/artifacts/:run/:file` | 截图证据 |
-| GET | `/demo/shop` | 内置故障页面 |
-| GET | `/demo/shop?fixed=1` | 内置修复后页面 |
-
-创建任务示例：
-
-```json
-{
-  "url": "http://127.0.0.1:8787/demo/shop",
-  "issue": "移动端点击加入购物车后，数量没有更新并出现横向滚动。",
-  "expected": "购物车数量更新为 1，页面无横向滚动。",
-  "devices": ["desktop", "iphone13", "pixel7"],
-  "qualityGate": {
-    "enabled": true,
-    "minScore": 75,
-    "maxHighSeverityFindings": 0,
-    "maxAccessibilityIssues": 3,
-    "maxPerformanceIssues": 2
-  }
-}
-```
-
-## 设计原则
-
-1. Evidence before opinion：确定性浏览器证据优先于模型猜测。
-2. Bounded autonomy：模型只能调用白名单浏览器动作。
-3. Human readable：每个结论都要能在 UI 中看到来源。
-4. Graceful fallback：模型故障不能让基础检测失效。
-5. Deliver artifacts：最终交付截图、报告和可执行测试，而不是聊天文字。
-
-更多说明见 [版本说明](docs/VERSIONS.md)、[产品设计](docs/PRODUCT_SPEC.md) 和 [架构文档](docs/ARCHITECTURE.md)。
-
-## 验证
+## 开发与验证
 
 ```sh
 npm run check
 ```
 
-该命令执行单元测试、API TypeScript 构建和 React 生产构建。
+执行单元测试及前后端构建。浏览器专项验证和已知限制见 [测试报告](docs/TEST_REPORTS.md)。
 
-## 安全边界
+重新录制演示：先执行 `npm run build`，再运行 `node scripts/record-demo.mjs`。脚本使用隔离的本地服务与测试页面，不调用模型或覆盖已有任务；更新 `docs/media` 中的视频和封面，执行证据保留在终端输出的临时目录。
 
-当前版本面向本机和可信内网开发环境。它允许访问用户输入的 HTTP/HTTPS 地址，方便验证 localhost 项目。不要在没有身份认证、URL allowlist、私网地址限制和任务配额的情况下直接暴露到公网。
+## 项目与文档
 
-`.env`、运行数据和截图均已加入 `.gitignore`，真实 API Key 不会进入 Git 提交。
+- `apps/web`：React 工作台、计划编辑、运行记录和证据展示。
+- `apps/api`：任务管理、Playwright 执行、业务断言、质量分析与 GitHub 集成。
+- `scripts`：验证与录制工具；`data/runs`、`artifacts`：本地任务和截图。
 
-## 迭代路线
+[版本说明与当前设计](docs/VERSIONS.md) · [产品说明](docs/PRODUCT_SPEC.md) · [架构文档](docs/ARCHITECTURE.md) · [测试报告](docs/TEST_REPORTS.md)
 
-| 版本 | 用户闭环 | 状态 |
-|---|---|---|
-| v0.1.0 | 从 Bug 描述到浏览器证据和回归测试 | 已完成 |
-| v0.2.0 | 从故障基线到修复验证和像素 Diff | 已完成 |
-| v0.3.0 | 从 GitHub Issue 到 Checks 证据报告 | 已完成 |
-| v0.4.0 | 从 Bug 复现到 WCAG、Web Vitals、质量门禁和趋势 | 已完成 |
-| v0.5.0 | 确认计划、业务断言、步骤证据和回归测试 | 当前版本，完整验收待执行 |
+GitHub 集成配置见 [仓库配置](.github/reprolens.yml) 和 [Actions 工作流](.github/workflows/reprolens.yml)。本地发布结果需要配置 `REPROLENS_GITHUB_TOKEN`；自动任务仍受计划确认限制。
 
-版本范围会根据真实使用需求调整；未进入当前版本的能力不会提前堆入主流程。
+## 安全与许可
 
-## License
+仅对已授权的本机或可信测试环境运行。直接开放公网前，需要补齐身份认证、目标地址限制和任务配额。不要提交真实密钥、个人信息或敏感截图；`.env` 和运行数据默认被 Git 忽略。
 
-[MIT](LICENSE)
+[MIT License](LICENSE)
