@@ -11,9 +11,9 @@
 
 ## 操作演示
 
-[![点击观看 ReproLens 真实操作演示](docs/media/reprolens-demo-poster.png)](docs/media/reprolens-demo.webm)
+[![点击观看 ReproLens 真实操作演示](docs/media/reprolens-demo-poster.png)](docs/media/reprolens-demo.mp4)
 
-[▶ 观看 / 下载视频（约 41 秒，WebM）](docs/media/reprolens-demo.webm)
+[▶ 观看 / 下载视频（约 41 秒，MP4）](docs/media/reprolens-demo.mp4)
 
 输入框无法输入 → 确认计划 → 真实执行 → 查看失败证据 → 修复后重放 → 核心检查通过。
 
@@ -65,7 +65,7 @@ npm run check
 
 执行单元测试及前后端构建。浏览器专项验证和已知限制见 [测试报告](docs/TEST_REPORTS.md)。
 
-重新录制演示：先执行 `npm run build`，再运行 `node scripts/record-demo.mjs`。脚本使用隔离的本地服务与测试页面，不调用模型或覆盖已有任务；更新 `docs/media` 中的视频和封面，执行证据保留在终端输出的临时目录。
+重新录制演示：先安装支持 `libx264` 的 FFmpeg（加入 PATH，或设置 `FFMPEG_PATH` 为可执行文件路径），执行 `npm run build`，再运行 `node scripts/record-demo.mjs`。脚本使用隔离的本地服务与测试页面，不调用模型或覆盖已有任务；更新 `docs/media` 中的 H.264 MP4 视频和封面，原始录像与执行证据保留在终端输出的临时目录。
 
 ## 项目与文档
 

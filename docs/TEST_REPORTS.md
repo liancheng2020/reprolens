@@ -7,7 +7,7 @@
 - 移除线上静态展示模式、预置任务、示意图与 Vercel 配置，保留本地真实执行和内置故障商城。
 - `npm run build` 通过；`node scripts/verify-layout.mjs` 验证问题列表直接展示、1440 / 1920 宽度下两组卡片等高及底部间距、390 宽度无页面横向溢出。
 - `node scripts/verify-v05-ui.mjs` 的模拟 API 界面冒烟通过，覆盖默认空表单、计划确认和重新编辑。
-- `node scripts/record-demo.mjs` 使用真实 API / Chromium、独立临时存储及本机注册表单：只读输入框判定 `reproduced`；修复后重放同一计划判定 `not_reproduced`，核心输入检查通过。未调用模型、未使用真实账号，未执行生成的测试文件；视频约 41 秒，保存至 `docs/media/reprolens-demo.webm`。
+- `node scripts/record-demo.mjs` 使用真实 API / Chromium、独立临时存储及本机注册表单：只读输入框判定 `reproduced`；修复后重放同一计划判定 `not_reproduced`，核心输入检查通过。未调用模型、未使用真实账号，未执行生成的测试文件；视频约 41 秒，现已转为 `docs/media/reprolens-demo.mp4`（H.264，保留原分辨率，完整解码检查通过）。
 - 本轮是针对性验证，不替代全部浏览器场景或线上部署验收。历史报告保留如下。
 
 ## 版本索引

@@ -9,6 +9,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "playwright";
+import { checkEncoder, convertToMp4 } from "./video.mjs";
+
+checkEncoder();
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = path.join(root, "docs/media");
@@ -131,8 +134,8 @@ try {
   console.log("VERIFIED: reproduced -> not_reproduced; real API, screenshots and regression template");
   await context.close();
   context = undefined;
-  await video.saveAs(path.join(output, "reprolens-demo.webm"));
-  console.log("Recording saved to docs/media/reprolens-demo.webm");
+  convertToMp4(await video.path(), path.join(output, "reprolens-demo.mp4"));
+  console.log("Recording saved to docs/media/reprolens-demo.mp4");
 } finally {
   await context?.close();
   await browser?.close();
