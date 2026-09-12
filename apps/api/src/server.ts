@@ -15,6 +15,7 @@ import { reproPlanSchema } from "./repro-plan.js";
 import { evaluationRouter } from "./evaluation/routes.js";
 import { fixtureRouter } from "./evaluation/fixtures.js";
 import { demoRouter, demoScenarios } from "./demo-scenarios.js";
+import { observePage } from "./page-observation.js";
 
 const deviceSchema = z.enum(["desktop", "iphone13", "pixel7"]);
 const createRunSchema = z.object({
@@ -115,12 +116,17 @@ app.post("/api/runs", async (request, response, next) => {
 
 app.post("/api/plans", async (request, response, next) => {
   try {
-    const parsed = createRunSchema.omit({ plan: true, planConfirmed: true }).safeParse(request.body);
+    const parsed = createRunSchema.omit({ plan: true, planConfirmed: true }).extend({ observePage: z.boolean().default(false) }).safeParse(request.body);
     if (!parsed.success) {
       response.status(422).json({ error: parsed.error.issues.map((issue) => issue.message).join("；") });
       return;
     }
-    response.json(await new DeepSeekProvider().createPlan(parsed.data));
+    let observation;
+    if (parsed.data.observePage) {
+      try { observation = await observePage(parsed.data.url, parsed.data.devices[0]!); }
+      catch { response.status(422).json({ error: "页面观察失败：请检查站点授权配置、网络及浏览器依赖。未调用模型；也可关闭观察后生成建议计划。" }); return; }
+    }
+    response.json(await new DeepSeekProvider().createPlan(parsed.data, observation));
   } catch (error) { next(error); }
 });
 

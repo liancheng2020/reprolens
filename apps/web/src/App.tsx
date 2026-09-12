@@ -165,6 +165,7 @@ function Dashboard({
   const [error, setError] = useState("");
   const [demos, setDemos] = useState<DemoScenario[]>([]);
   const [usingDemo, setUsingDemo] = useState(false);
+  const [observeBeforePlan, setObserveBeforePlan] = useState(false);
   useEffect(() => { void api.demos().then(setDemos).catch(() => setDemos([])); }, []);
 
   const loadDemo = (demo: DemoScenario) => {
@@ -203,7 +204,7 @@ function Dashboard({
     setSubmitting(true);
     try {
       if (!plan) {
-        setPlan(await api.createPlan(input));
+        setPlan(await api.createPlan({ ...input, observePage: observeBeforePlan }));
         setConfirmed(false);
       } else {
         if (!confirmed) { setError("请核对并确认复现计划"); return; }
@@ -271,6 +272,7 @@ function Dashboard({
                 ))}
               </div>
             </fieldset>
+            {!plan && <label className="plan-consent"><input type="checkbox" disabled={submitting} checked={observeBeforePlan} onChange={e => setObserveBeforePlan(e.target.checked)} /><span>允许访问已授权站点，并将初始页面元素名称发送给模型（首个所选设备，不含输入值）。</span></label>}
             {plan && <PlanEditor plan={plan} onChange={(next) => { setPlan(next); setConfirmed(false); }} />}
             {plan && <label className="plan-consent"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /><span>我已核对目标页面、定位方式、测试数据和核心检查项；所有未覆盖的期望已在范围中明确排除。</span></label>}
             {plan && <button type="button" className="secondary-button" disabled={submitting} onClick={() => { setPlan(undefined); setConfirmed(false); }}>重新生成计划</button>}

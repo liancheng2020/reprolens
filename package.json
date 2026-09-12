@@ -7,6 +7,7 @@
     "apps/*"
   ],
   "scripts": {
+    "eval:model": "npm run eval:model --workspace @reprolens/api --",
     "eval:smoke": "npm run eval --workspace @reprolens/api -- smoke",
     "eval:full": "npm run eval --workspace @reprolens/api -- full",
     "start": "npm run start --workspace @reprolens/api",
