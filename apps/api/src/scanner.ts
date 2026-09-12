@@ -241,7 +241,7 @@ export class BrowserScanner {
     }
 
     await callbacks.step("启动隔离浏览器", "Chromium / Playwright");
-    const browser = await chromium.launch({ headless: config.headless });
+    const browser = await chromium.launch({ headless: config.headless, channel: config.browserChannel });
 
     try {
       for (const deviceName of input.devices) {

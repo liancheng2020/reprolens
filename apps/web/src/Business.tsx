@@ -3,7 +3,7 @@ import "./business.css";
 
 export const verdictLabels = { reproduced: "已复现", not_reproduced: "此路径未复现", inconclusive: "证据不足" };
 const actions = { click: "点击", input: "键盘输入并验证", assert: "检查结果", reload: "刷新页面" };
-const assertions = { value: "输入值相等", text: "文本相等", visible: "可见", hidden: "隐藏 / 消失", enabled: "可用", editable: "可编辑", url: "URL 相等", response: "关联请求" };
+const assertions = { value: "输入值相等", text: "文本相等", visible: "可见", hidden: "隐藏 / 消失", enabled: "可用", editable: "可编辑", url: "URL 相等", response: "关联请求", unobscured: "视口内且中心无遮挡" };
 const states = { passed: "通过", failed: "失败", blocked: "受阻", skipped: "跳过" };
 const emptyStep = (): ReproStep => ({ title: "新的检查项", action: "assert", phase: "check", assertion: "visible", target: { by: "label", value: "" }, allowSideEffect: false });
 
@@ -16,7 +16,8 @@ export function PlanEditor({ plan, onChange }: { plan: ReproPlan; onChange: (pla
     <label><span>验收范围（不在此范围内的结果不会被证明）</span><textarea rows={2} value={plan.scope} onChange={e => onChange({ ...plan, scope: e.target.value })} /></label>
     {plan.warnings.map((warning, i) => <p className="plan-warning" key={i}>{warning}</p>)}
     <p className="plan-help">定位值需与页面名称完全一致；CSS 为高级选项。匹配多个控件时会停止，不会猜测。请使用合成测试数据，不要填写密码或真实个人信息。</p>
-    {plan.steps.map((step, index) => <article className="plan-step" key={index}>
+    {plan.steps.map((step, index) => <details className="plan-step" key={index} open={step.target?.value === "" ? true : undefined}>
+      <summary className="plan-step-summary"><strong>{index + 1}. {step.title}</strong><small>{step.phase === "check" ? "核心检查" : "前置准备"} · {actions[step.action]}{step.assertion ? ` / ${assertions[step.assertion]}` : ""}{step.target ? ` · ${step.target.by}: ${step.target.value}` : ""}{step.value ? ` · ${step.value}` : ""}</small></summary>
       <div className="plan-step-heading"><b>步骤 {index + 1}</b><div>
         <button type="button" disabled={index === 0} onClick={() => { const steps = [...plan.steps]; [steps[index - 1], steps[index]] = [steps[index], steps[index - 1]]; onChange({ ...plan, steps }); }}>上移</button>
         <button type="button" onClick={() => onChange({ ...plan, steps: plan.steps.filter((_, i) => i !== index) })}>删除</button>
@@ -47,7 +48,7 @@ export function PlanEditor({ plan, onChange }: { plan: ReproPlan; onChange: (pla
         <label><span>响应字段（可选，例 count）</span><input value={step.responseField ?? ""} onChange={e => update(index, { responseField: e.target.value || undefined })} /></label>
       </div>}
       {step.action === "click" && <label className="plan-consent"><input type="checkbox" checked={step.allowSideEffect} onChange={e => update(index, { allowSideEffect: e.target.checked })} /><span>此步骤可能提交或修改数据，我确认目标为已授权的测试环境</span></label>}
-    </article>)}
+    </details>)}
     <button type="button" className="secondary-button" disabled={plan.steps.length >= 15} onClick={() => onChange({ ...plan, steps: [...plan.steps, emptyStep()] })}>添加步骤 / 检查项</button>
   </section>;
 }

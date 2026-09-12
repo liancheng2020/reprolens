@@ -12,7 +12,7 @@ export interface ReproStep {
   phase: "setup" | "check";
   target?: ReproTarget;
   value?: string;
-  assertion?: "value" | "text" | "visible" | "hidden" | "enabled" | "editable" | "url" | "response";
+  assertion?: "value" | "text" | "visible" | "hidden" | "enabled" | "editable" | "url" | "response" | "unobscured";
   requestPath?: string;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   statusCode?: number;

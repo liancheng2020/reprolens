@@ -25,21 +25,22 @@ import {
   Play,
   Radio,
   RefreshCw,
-  Search,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   SquareTerminal,
   TrendingUp,
   Wifi
 } from "lucide-react";
 import { api } from "./api";
+import { Evaluation } from "./Evaluation";
 import { GitHubImport } from "./GitHubImport";
 import { GitHubSourceCard } from "./GitHubSourceCard";
 import type { AppConfig, CreateRunInput, DeviceName, Finding, QualityTrendPoint, ReproRun, WebVitals } from "./types";
 import { VerificationPanel } from "./VerificationPanel";
 import { BusinessEvidence, PlanEditor, verdictLabels } from "./Business";
 import type { ReproPlan } from "./types";
+import type { DemoScenario } from "../../api/src/demo-scenarios";
+import "./reproduction.css";
 
 const defaultInput: CreateRunInput = {
   url: "",
@@ -81,9 +82,9 @@ function Logo() {
   );
 }
 
-type AppView = "dashboard" | "history";
+type AppView = "dashboard" | "history" | "evaluation";
 
-function Shell({ children, activeView, onHome, onHistory, config }: { children: ReactNode; activeView: AppView; onHome: () => void; onHistory: () => void; config?: AppConfig }) {
+function Shell({ children, activeView, onHome, onHistory, onEvaluation, config }: { children: ReactNode; activeView: AppView; onHome: () => void; onHistory: () => void; onEvaluation: () => void; config?: AppConfig }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -93,9 +94,13 @@ function Shell({ children, activeView, onHome, onHistory, config }: { children: 
           <button className={`nav-item ${activeView === "history" ? "active" : ""}`} aria-current={activeView === "history" ? "page" : undefined} onClick={onHistory}><History size={18} /> 运行记录</button>
         </nav>
         <div className="sidebar-spacer" />
+        <details className="developer-tools" open={activeView === "evaluation" ? true : undefined}>
+          <summary title="开发者工具" aria-label="开发者工具"><Code2 size={18} /><span>开发者工具</span></summary>
+          <button className={`nav-item ${activeView === "evaluation" ? "active" : ""}`} aria-current={activeView === "evaluation" ? "page" : undefined} onClick={onEvaluation}><CheckCircle2 size={18} /> 评测实验室</button>
+        </details>
         <div className="agent-card">
-          <div className="agent-card-title"><Bot size={16} /> Agent online</div>
-          <p>受限浏览器动作 · 证据优先</p>
+          <div className="agent-card-title"><Bot size={16} /> 规划辅助</div>
+          <p>用户确认后执行</p>
           <div className="provider-row">
             <span className="status-dot" />
             <span>{config?.provider === "deepseek" ? "DeepSeek" : "Fallback"}</span>
@@ -158,6 +163,16 @@ function Dashboard({
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [demos, setDemos] = useState<DemoScenario[]>([]);
+  const [usingDemo, setUsingDemo] = useState(false);
+  useEffect(() => { void api.demos().then(setDemos).catch(() => setDemos([])); }, []);
+
+  const loadDemo = (demo: DemoScenario) => {
+    setUsingDemo(true);
+    const { id: _id, title: _title, path, ...request } = demo;
+    setInput({ ...request, url: new URL(path, config?.demoUrl ?? window.location.origin).href, plan: undefined, planConfirmed: false });
+    setPlan(structuredClone(demo.plan)); setConfirmed(false); setError("");
+  };
 
   useEffect(() => {
     if (config?.qualityGate) setInput((current) => ({ ...current, qualityGate: config.qualityGate }));
@@ -169,6 +184,7 @@ function Dashboard({
   };
 
   const toggleDevice = (device: DeviceName) => {
+    setConfirmed(false);
     setInput((current) => ({
       ...current,
       devices: current.devices.includes(device)
@@ -192,7 +208,7 @@ function Dashboard({
       } else {
         if (!confirmed) { setError("请核对并确认复现计划"); return; }
         const payload = { ...input, plan, planConfirmed: true };
-        onCreated(retryRun ? await api.replanRun(retryRun.id, payload) : await api.createRun(payload));
+        onCreated(retryRun && !usingDemo ? await api.replanRun(retryRun.id, payload) : await api.createRun(payload));
       }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "创建任务失败");
@@ -203,43 +219,28 @@ function Dashboard({
 
   const completed = runs.filter((run) => run.status === "completed");
   const reproduced = completed.filter((run) => run.business && run.verdict === "reproduced").length;
-  const averageScore = completed.length
-    ? Math.round(completed.reduce((total, run) => total + (run.score ?? 0), 0) / completed.length)
-    : 0;
+  const notReproduced = completed.filter(run => run.business && run.verdict === "not_reproduced").length;
+  const inconclusive = completed.filter(run => run.business && run.verdict === "inconclusive").length;
 
   return (
     <>
-      <Topbar title="验证工作台" subtitle="把模糊的 Bug 报告变成可验证证据" config={config} />
+      <Topbar title="Bug 复现工作台" subtitle="UI 与交互问题 · 复现证据 · 修复验证" config={config} />
       <div className="content">
-        <section className="hero">
-          <div className="hero-copy">
-            <div className="eyebrow"><Sparkles size={15} /> Browser QA Agent</div>
-            <h2>从一句问题描述，<br /><span>抵达可复现的真相。</span></h2>
-            <p>明确复现目标，确认操作与业务检查项。ReproLens 操作真实浏览器，展示期望与实际结果，并生成回归测试。</p>
-            <div className="hero-proof">
-              <span><ShieldCheck size={17} /> 受限动作</span>
-              <span><Eye size={17} /> 全程可见</span>
-              <span><FileCode2 size={17} /> 测试可交付</span>
-            </div>
-          </div>
-          <div className="orbit-visual" aria-hidden="true">
-            <div className="orbit orbit-one" />
-            <div className="orbit orbit-two" />
-            <div className="orbit-core"><Bot size={34} /><span>agent</span></div>
-            <div className="orbit-node node-a"><Globe2 size={18} /></div>
-            <div className="orbit-node node-b"><Search size={18} /></div>
-            <div className="orbit-node node-c"><Code2 size={18} /></div>
-          </div>
+        <section className="repro-intro">
+          <div><span className="section-kicker">REPROLENS</span><h2>复现 Web UI 与交互问题</h2></div>
+          <ol><li>描述问题</li><li>确认步骤</li><li>查看证据</li><li>验证修复</li></ol>
         </section>
 
         <section className="stats-grid">
           <article className="stat-card"><div className="stat-icon lime"><Activity size={19} /></div><div><span>累计运行</span><strong>{runs.length}</strong></div><small>本地持久化</small></article>
           <article className="stat-card"><div className="stat-icon coral"><AlertTriangle size={19} /></div><div><span>成功复现</span><strong>{reproduced}</strong></div><small>证据驱动</small></article>
-          <article className="stat-card"><div className="stat-icon blue"><ShieldCheck size={19} /></div><div><span>平均评分</span><strong>{averageScore || "—"}</strong></div><small>/ 100</small></article>
-          <article className="stat-card"><div className="stat-icon purple"><Bot size={19} /></div><div><span>推理引擎</span><strong className="engine-name">{config?.provider === "deepseek" ? "DeepSeek" : "Rules"}</strong></div><small>{config?.model ?? "deterministic"}</small></article>
+          <article className="stat-card"><div className="stat-icon blue"><ShieldCheck size={19} /></div><div><span>此路径未复现</span><strong>{notReproduced}</strong></div></article>
+          <article className="stat-card"><div className="stat-icon coral"><Eye size={19} /></div><div><span>证据不足</span><strong>{inconclusive}</strong></div></article>
         </section>
 
-        <GitHubImport config={config} onImported={onCreated} />
+        {!!demos.length && <section className="repro-demos" aria-label="复现示例"><strong>示例</strong>{demos.map(demo => <button key={demo.id} className="secondary-button" disabled={submitting} onClick={() => loadDemo(demo)}>{demo.id === "modal" ? <Smartphone size={16} /> : <SquareTerminal size={16} />}{demo.title}</button>)}</section>}
+
+        <details className="repro-github"><summary>从 GitHub Issue 导入</summary><GitHubImport config={config} onImported={onCreated} /></details>
 
         <section className="workspace-grid">
           <form className="run-form panel" onSubmit={submit}>
@@ -351,7 +352,7 @@ function RunHistory({ runs, trends, config, onSelect }: { runs: ReproRun[]; tren
     <>
       <Topbar title="运行记录" subtitle="查看历次复现任务及其证据结果" config={config} />
       <div className="content history-content">
-        <QualityTrend trends={trends} />
+        <details className="quality-disclosure"><summary>附加页面质量趋势</summary><QualityTrend trends={trends} /></details>
         <section className="history-panel panel">
           <div className="panel-heading">
             <div><span className="section-kicker">RUN HISTORY</span><h3>全部运行</h3></div>
@@ -485,16 +486,16 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
           <div className="overview-meta">
             <div><span>核心覆盖</span><strong>{run.business ? `${run.business.covered}/${run.business.total}` : "旧版"}</strong></div>
             <div><span>耗时</span><strong>{formatDuration(run.metrics.durationMs)}</strong></div>
-            <div><span>引擎</span><strong>{run.provider === "deepseek" ? "DeepSeek" : "Rules"}</strong></div>
+            <div><span>执行器</span><strong>Playwright</strong></div>
           </div>
           {!isRunning && <button className="secondary-button" onClick={onReplan}>编辑计划并重新复现</button>}
         </section>
 
         <GitHubSourceCard run={run} canPublish={Boolean(config?.github.configured)} onPublish={onPublish} />
 
-        <VerificationPanel run={run} activeDevice={activeDevice} onVerify={onVerify} />
-
         <BusinessEvidence report={run.business} />
+
+        <VerificationPanel key={run.id} run={run} activeDevice={activeDevice} onVerify={onVerify} />
 
         <section className="inspect-grid">
           <div className="browser-panel panel">
@@ -540,10 +541,11 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
         </section>
 
         <section className="result-grid">
-          <div className="findings-panel panel">
+          <details className="findings-panel panel">
+            <summary>附加页面质量发现 · {run.findings.length} 项</summary>
             <div className="panel-heading"><div><span className="section-kicker">ADDITIONAL QUALITY</span><h3>附加页面质量问题（不代表目标 Bug）</h3></div><span className="finding-count">{run.findings.length}</span></div>
             {run.findings.length ? <div className="finding-list">{run.findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div> : <div className="empty-mini"><Eye size={24} /><span>暂无附加质量发现</span></div>}
-          </div>
+          </details>
 
           <div className="code-panel panel">
             <div className="panel-heading"><div><span className="section-kicker">DELIVERABLE</span><h3>回归测试</h3></div>{run.generatedTest && <button className="copy-button" onClick={copyCode}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "已复制" : "复制"}</button>}</div>
@@ -619,6 +621,7 @@ export default function App() {
     <Shell
       activeView={view}
       onHome={() => { setView("dashboard"); setSelected(undefined); setRetryRun(undefined); }}
+      onEvaluation={() => { setView("evaluation"); setSelected(undefined); setRetryRun(undefined); }}
       onHistory={() => { setView("history"); setSelected(undefined); void api.qualityTrends().then(setTrends).catch(() => undefined); }}
       config={config}
     >
@@ -640,7 +643,7 @@ export default function App() {
             setSelected(next);
           }}
         />
-      ) : view === "history" ? (
+      ) : view === "evaluation" ? <Evaluation /> : view === "history" ? (
         <RunHistory runs={sortedRuns} trends={trends} config={config} onSelect={setSelected} />
       ) : (
         <Dashboard

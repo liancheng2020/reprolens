@@ -7,6 +7,8 @@
     "apps/*"
   ],
   "scripts": {
+    "eval:smoke": "npm run eval --workspace @reprolens/api -- smoke",
+    "eval:full": "npm run eval --workspace @reprolens/api -- full",
     "start": "npm run start --workspace @reprolens/api",
     "dev": "concurrently --kill-others-on-fail --names API,WEB --prefix-colors cyan,magenta \"npm run dev --workspace @reprolens/api\" \"npm run dev --workspace @reprolens/web\"",
     "github:run": "npm run github:run --workspace @reprolens/api",

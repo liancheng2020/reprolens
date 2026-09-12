@@ -24,7 +24,7 @@ interface Props {
 function suggestedFixUrl(value: string): string {
   try {
     const url = new URL(value);
-    if (url.pathname === "/demo/shop" && !url.searchParams.has("fixed")) url.searchParams.set("fixed", "1");
+    if (["/demo/shop", "/demo/modal", "/demo/profile"].includes(url.pathname)) url.searchParams.set("fixed", "1");
     return url.toString();
   } catch {
     return value;

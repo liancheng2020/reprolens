@@ -18,7 +18,7 @@ export const reproPlanSchema = z.object({
     phase: z.enum(["setup", "check"]),
     target: targetSchema.optional(),
     value: z.string().max(500).optional(),
-    assertion: z.enum(["value", "text", "visible", "hidden", "enabled", "editable", "url", "response"]).optional(),
+    assertion: z.enum(["value", "text", "visible", "hidden", "enabled", "editable", "url", "response", "unobscured"]).optional(),
     requestPath: z.string().startsWith("/").max(300).optional(),
     method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]).optional(),
     statusCode: z.number().int().min(100).max(599).optional(),
@@ -64,11 +64,12 @@ export function draftPlan(input: CreateRunInput): ReproPlan {
 
 export const planPrompt = [
   "Generate a bounded browser reproduction plan, NOT a page quality scan. Return JSON only.",
-  'Schema: {version:1, objective:string, scope:string, warnings:string[], steps:[{title:string,action:"click|input|assert|reload",phase:"setup|check",target?:{by:"label|placeholder|text|role|css",value:string,role?:"button|link|tab|textbox|checkbox|heading"},value?:string,assertion?:"value|text|visible|hidden|enabled|editable|url|response",requestPath?:string,method?:"GET|POST|PUT|PATCH|DELETE",statusCode?:number,responseField?:string,allowSideEffect:false}]}',
+  'Schema: {version:1, objective:string, scope:string, warnings:string[], steps:[{title:string,action:"click|input|assert|reload",phase:"setup|check",target?:{by:"label|placeholder|text|role|css",value:string,role?:"button|link|tab|textbox|checkbox|heading"},value?:string,assertion?:"value|text|visible|hidden|enabled|editable|url|response|unobscured",requestPath?:string,method?:"GET|POST|PUT|PATCH|DELETE",statusCode?:number,responseField?:string,allowSideEffect:false}]}',
   "Use Chinese titles and warnings. At most 15 steps. Every reported expectation must be covered or explicitly identified as out of scope in warnings.",
   "You have NOT observed the website. Locators are suggestions for user confirmation. Explicitly warn about unknown targets. Never invent an observed result.",
   "First verify the target scene using a setup assertion. If the report concerns registration but URL is login, suggest opening registration and then verifying its form before typing.",
   "For cannot-type reports use action input with phase check and test value: it tests user keyboard input, retention, and editability. Do not substitute visibility or page quality.",
+  "For reported UI obstruction use assertion unobscured: it checks that the entire target bounding rectangle is in the viewport and its center receives pointer hits. It does not prove visual design correctness or full-area visibility. Do not replace a UI-specific expectation with generic quality findings.",
   "Do not submit registration or send SMS just to test typing. All input data must be synthetic. No credentials, payments, deletion, or external messaging.",
   "setup input or click is only preparation; check input or assert decides the bug verdict. Prefer semantic unique locators. No arbitrary JavaScript. Never output an empty plan."
 ].join("\n");

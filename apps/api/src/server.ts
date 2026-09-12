@@ -12,6 +12,9 @@ import { RunInputError, RunManager } from "./run-manager.js";
 import { RunStore } from "./store.js";
 import { DeepSeekProvider } from "./provider.js";
 import { reproPlanSchema } from "./repro-plan.js";
+import { evaluationRouter } from "./evaluation/routes.js";
+import { fixtureRouter } from "./evaluation/fixtures.js";
+import { demoRouter, demoScenarios } from "./demo-scenarios.js";
 
 const deviceSchema = z.enum(["desktop", "iphone13", "pixel7"]);
 const createRunSchema = z.object({
@@ -51,6 +54,10 @@ app.use(express.json({
 }));
 app.use("/artifacts", express.static(config.artifactsDir, { fallthrough: false, maxAge: "1h" }));
 app.use("/api/github", createGitHubRouter(github));
+app.use("/api/evaluations", evaluationRouter());
+app.use("/demo/eval", fixtureRouter());
+app.use("/demo", demoRouter());
+app.get("/api/demos", (_request, response) => response.json(demoScenarios));
 
 app.get("/health", (_request, response) => {
   response.json({

@@ -1,5 +1,6 @@
 import type { CreateRunInput, ReproTarget } from "./types.js";
 import { viewports } from "./business.js";
+import { uiProbe } from "./ui-check.js";
 
 function locator(target: ReproTarget): string {
   const value = JSON.stringify(target.value);
@@ -9,7 +10,7 @@ function locator(target: ReproTarget): string {
   return "page." + method + "(" + value + ", { exact: true })";
 }
 
-export function generateBusinessTest(input: CreateRunInput): string {
+export function generateBusinessTest(input: CreateRunInput, targetFromEnv = false): string {
   if (!input.plan || !input.planConfirmed) return "// 测试草稿：缺少已确认的业务复现计划。请在工作台生成并确认计划。";
   const lines = [
     'import { test, expect } from "playwright/test";',
@@ -22,7 +23,7 @@ export function generateBusinessTest(input: CreateRunInput): string {
   for (const device of input.devices) {
     lines.push("", "test(" + JSON.stringify(device + " · " + input.plan.objective) + ", async ({ page }) => {",
       "  await page.setViewportSize(" + JSON.stringify(viewports[device]) + ");",
-      "  await page.goto(" + JSON.stringify(input.url) + ', { waitUntil: "domcontentloaded" });',
+      "  await page.goto(" + (targetFromEnv ? "process.env.REPROLENS_TARGET_URL ?? " : "") + JSON.stringify(input.url) + ', { waitUntil: "domcontentloaded" });',
       "  const origin = new URL(page.url()).origin;",
       "  let epoch = 0;",
       "  const requestEpoch = new WeakMap<Request, number>();",
@@ -67,6 +68,8 @@ export function generateBusinessTest(input: CreateRunInput): string {
           "  await " + t + '.press("Tab");',
           "  await page.waitForTimeout(350);",
           "  await expect(" + t + ").toHaveValue(" + v + ", { timeout: 4000 });");
+      } else if (step.assertion === "unobscured") {
+        lines.push("  await expect.poll(async () => (await " + t + ".evaluate(" + uiProbe.toString() + ")).clear, { timeout: 4000 }).toBe(true);");
       } else if (step.assertion === "url") {
         lines.push("  await expect.poll(() => page.url(), { timeout: 4000 }).toBe(new URL(" + v + ", page.url()).href);");
       } else if (step.assertion === "response") {

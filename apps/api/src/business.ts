@@ -1,4 +1,5 @@
 import path from "node:path";
+import { uiProbe, type UiObservation } from "./ui-check.js";
 import { expect } from "playwright/test";
 import type { Locator, Page, Response } from "playwright";
 import type { BusinessReport, CreateRunInput, DeviceName, ReproPlan, ReproStep, ReproTarget, StepEvidence } from "./types.js";
@@ -14,6 +15,7 @@ export function locate(page: Page, target: ReproTarget): Locator {
 }
 const clean = (value: string) => value.replace(/https?:\/\/[^\s]+/g, "[URL]").slice(0, 500);
 const expectedFor = (step: ReproStep) => step.action === "input" ? "输入并失焦后值等于 " + JSON.stringify(step.value)
+  : step.assertion === "unobscured" ? "目标矩形完整位于视口内，且中心命中目标或其子元素"
   : step.action === "assert" ? (step.assertion + ": " + (step.value ?? step.statusCode ?? "true"))
   : step.action === "reload" ? "重新加载当前页面" : "完成已确认的点击动作";
 
@@ -166,6 +168,13 @@ export async function executePlan(page: Page, plan: ReproPlan, device: DeviceNam
                 asserting = true;
                 expect(String(value)).toBe(step.value);
               }
+            } else if (step.assertion === "unobscured") {
+              asserting = true;
+              await expect.poll(async () => {
+                const state = await target!.evaluate(uiProbe) as UiObservation;
+                result.actual = JSON.stringify(state);
+                return state.clear;
+              }, { timeout: TIMEOUT }).toBe(true);
             } else {
               asserting = true;
               switch (step.assertion) {
