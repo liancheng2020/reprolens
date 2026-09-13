@@ -543,11 +543,10 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
         </section>
 
         <section className="result-grid">
-          <details className="findings-panel panel">
-            <summary>附加页面质量发现 · {run.findings.length} 项</summary>
+          <div className="findings-panel panel">
             <div className="panel-heading"><div><span className="section-kicker">ADDITIONAL QUALITY</span><h3>附加页面质量问题（不代表目标 Bug）</h3></div><span className="finding-count">{run.findings.length}</span></div>
             {run.findings.length ? <div className="finding-list">{run.findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div> : <div className="empty-mini"><Eye size={24} /><span>暂无附加质量发现</span></div>}
-          </details>
+          </div>
 
           <div className="code-panel panel">
             <div className="panel-heading"><div><span className="section-kicker">DELIVERABLE</span><h3>回归测试</h3></div>{run.generatedTest && <button className="copy-button" onClick={copyCode}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "已复制" : "复制"}</button>}</div>
