@@ -1,13 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { ArrowRight, CheckCircle2, GitCompare, Image, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
-import type { DeviceName, ReproRun, VerificationStatus } from "./types";
-
-const statusCopy: Record<VerificationStatus, { label: string; icon: typeof CheckCircle2 }> = {
-  improved: { label: "页面质量改善", icon: CheckCircle2 },
-  regressed: { label: "发现回归", icon: TriangleAlert },
-  changed: { label: "视觉已变化", icon: GitCompare },
-  unchanged: { label: "基本无变化", icon: RotateCcw }
-};
+import { ArrowRight, GitCompare, Image, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
+import type { DeviceName, ReproRun } from "./types";
 
 const deviceLabels: Record<DeviceName, string> = {
   desktop: "Desktop",
@@ -58,21 +51,15 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
       <div className="verification-heading">
         <div>
           <span className="section-kicker">FIX VERIFICATION</span>
-          <h3>{verification ? "Before / After 附加视觉对比" : "重放已确认计划验证修复"}</h3>
+          <h3>{verification ? "修复重放结果" : "重放已确认计划验证修复"}</h3>
           <p>业务是否修复以核心检查为准。下方视觉变化仅供辅助参考。请仅重放到已授权的测试站点。</p>
         </div>
-        {verification && (() => {
-          const StatusIcon = statusCopy[verification.status].icon;
-          return <span className={`verification-status ${verification.status}`}><StatusIcon size={15} />{statusCopy[verification.status].label}</span>;
-        })()}
       </div>
 
       {comparison && verification ? (
-        <>
+        <details className="quality-disclosure">
+          <summary>Before / After 像素对比（辅助证据）</summary>
           <div className="verification-metrics">
-            <div><span>质量分变化</span><strong className={verification.scoreDelta >= 0 ? "positive" : "negative"}>{verification.scoreDelta > 0 ? "+" : ""}{verification.scoreDelta}</strong></div>
-            <div><span>已解决</span><strong>{verification.resolvedFindings}</strong></div>
-            <div><span>新引入</span><strong>{verification.introducedFindings}</strong></div>
             <div><span>{deviceLabels[comparison.device]} 像素变化</span><strong>{(comparison.mismatchRatio * 100).toFixed(2)}%</strong></div>
           </div>
           <div className="comparison-grid">
@@ -87,7 +74,7 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
               </figure>
             ))}
           </div>
-        </>
+        </details>
       ) : (
         <div className="verification-empty"><GitCompare size={34} /><span>尚未执行修复对比</span></div>
       )}

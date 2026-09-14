@@ -26,6 +26,7 @@ const createRunSchema = z.object({
   baselineRunId: z.string().uuid().optional(),
   plan: reproPlanSchema.optional(),
   planConfirmed: z.boolean().optional(),
+  qualityScan: z.boolean().default(false),
   qualityGate: z.object({
     enabled: z.boolean(),
     minScore: z.number().int().min(0).max(100),

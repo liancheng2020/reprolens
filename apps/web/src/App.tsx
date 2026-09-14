@@ -272,6 +272,7 @@ function Dashboard({
                 ))}
               </div>
             </fieldset>
+            <label className="plan-consent"><input type="checkbox" disabled={submitting} checked={input.qualityScan ?? false} onChange={e => setInput(current => ({ ...current, qualityScan: e.target.checked }))} /><span>附加页面质量扫描（可选）：可访问性、性能与通用布局检查</span></label>
             {!plan && <label className="plan-consent"><input type="checkbox" disabled={submitting} checked={observeBeforePlan} onChange={e => setObserveBeforePlan(e.target.checked)} /><span>允许访问已授权站点，并将初始页面元素名称发送给模型（首个所选设备，不含输入值）。</span></label>}
             {plan && <PlanEditor plan={plan} onChange={(next) => { setPlan(next); setConfirmed(false); }} />}
             {plan && <label className="plan-consent"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /><span>我已核对目标页面、定位方式、测试数据和核心检查项；所有未覆盖的期望已在范围中明确排除。</span></label>}
@@ -449,10 +450,13 @@ function FindingCard({ finding }: { finding: Finding }) {
 }
 
 function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onReplan }: { run: ReproRun; config?: AppConfig; onBack: () => void; onRefresh: () => void; onVerify: (url: string) => Promise<void>; onPublish: () => Promise<void>; onReplan: () => void }) {
-  const [activeDevice, setActiveDevice] = useState<DeviceName>(run.screenshots[0]?.device ?? run.input.devices[0]);
+  const [activeDevice, setActiveDevice] = useState<DeviceName>(run.business?.steps.find(step => step.status === "failed" || step.status === "blocked")?.device ?? run.screenshots[0]?.device ?? run.input.devices[0]);
   const [copied, setCopied] = useState(false);
   const screenshot = run.screenshots.find((item) => item.device === activeDevice) ?? run.screenshots.at(-1);
   const isRunning = run.status === "running" || run.status === "queued";
+  const runtimeFindings = run.findings.filter(item => item.category === "console" || item.category === "network");
+  const qualityFindings = run.findings.filter(item => item.category !== "console" && item.category !== "network");
+  const hasQuality = Boolean(run.quality || qualityFindings.length);
 
   useEffect(() => {
     if (!run.screenshots.some((item) => item.device === activeDevice) && run.screenshots[0]) setActiveDevice(run.screenshots[0].device);
@@ -481,7 +485,7 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
         <section className="run-overview panel">
           <div className="overview-main">
             <div className={`verdict-icon ${run.verdict ?? "running"}`}>
-              {isRunning ? <LoaderCircle className="spin" size={25} /> : run.verdict === "reproduced" ? <AlertTriangle size={25} /> : <CheckCircle2 size={25} />}
+              {isRunning ? <LoaderCircle className="spin" size={25} /> : run.verdict === "not_reproduced" && run.status !== "failed" ? <CheckCircle2 size={25} /> : <AlertTriangle size={25} />}
             </div>
             <div><span className="section-kicker">{isRunning ? "AGENT IS WORKING" : "BUSINESS VERIFICATION"}</span><h2>{isRunning ? run.currentStep : run.status === "failed" ? "执行失败" : run.business ? verdictLabels[run.verdict ?? "inconclusive"] : "旧版页面质量扫描"}</h2><p>{run.error ?? run.summary ?? run.input.issue}</p></div>
           </div>
@@ -491,6 +495,12 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
             <div><span>执行器</span><strong>Playwright</strong></div>
           </div>
           {!isRunning && <button className="secondary-button" onClick={onReplan}>编辑计划并重新复现</button>}
+        </section>
+
+        <section className="bug-context panel">
+          <h3>本次复现目标</h3>
+          <dl><dt>问题描述</dt><dd>{run.input.issue}</dd><dt>预期行为</dt><dd>{run.input.expected}</dd><dt>验证范围</dt><dd>{run.input.plan?.scope ?? "旧记录未声明验证范围"}</dd></dl>
+          {!isRunning && <p className="plan-help">{run.status === "failed" ? "执行未完成，不能判断目标 Bug。检查上述错误与时间线后重新运行。" : run.verdict === "inconclusive" ? "证据不足不等于没有 Bug。请查看受阻步骤，确认页面可访问、前置条件和控件定位，再编辑计划重试。" : run.verdict === "not_reproduced" ? "仅代表已执行的路径与设备未复现，不代表页面不存在其他问题。" : "核心检查与预期不符；请结合下方实际值和步骤截图核查。"}</p>}
         </section>
 
         <GitHubSourceCard run={run} canPublish={Boolean(config?.github.configured)} onPublish={onPublish} />
@@ -519,7 +529,7 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
                 <div className="screenshot-wrap">
                   <img src={screenshot.url} alt={`${deviceLabels[screenshot.device]} evidence`} />
                   {!!run.findings.filter((item) => item.device === screenshot.device).length && (
-                    <span className="evidence-pin"><AlertTriangle size={14} /> {run.findings.filter((item) => item.device === screenshot.device).length} issues</span>
+                    <span className="evidence-pin"><AlertTriangle size={14} /> {run.findings.filter((item) => item.device === screenshot.device).length} 条辅助线索</span>
                   )}
                 </div>
               ) : (
@@ -542,11 +552,12 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
           </div>
         </section>
 
-        <section className="result-grid">
-          <div className="findings-panel panel">
-            <div className="panel-heading"><div><span className="section-kicker">ADDITIONAL QUALITY</span><h3>附加页面质量问题（不代表目标 Bug）</h3></div><span className="finding-count">{run.findings.length}</span></div>
-            {run.findings.length ? <div className="finding-list">{run.findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div> : <div className="empty-mini"><Eye size={24} /><span>暂无附加质量发现</span></div>}
-          </div>
+        <section className={runtimeFindings.length ? "result-grid" : "result-deliverable"}>
+          {!!runtimeFindings.length && <div className="findings-panel panel">
+            <div className="panel-heading"><div><span className="section-kicker">RUNTIME EVIDENCE</span><h3>运行期间的错误</h3></div><span className="finding-count">{runtimeFindings.length}</span></div>
+            <p className="plan-help">辅助排查线索，尚不能证明与目标 Bug 存在因果关系。</p>
+            <div className="finding-list">{runtimeFindings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div>
+          </div>}
 
           <div className="code-panel panel">
             <div className="panel-heading"><div><span className="section-kicker">DELIVERABLE</span><h3>回归测试</h3></div>{run.generatedTest && <button className="copy-button" onClick={copyCode}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "已复制" : "复制"}</button>}</div>
@@ -558,13 +569,13 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
           </div>
         </section>
 
-        <details className="quality-disclosure panel"><summary>附加页面质量报告 · 与业务复现独立</summary><QualityPanel run={run} activeDevice={activeDevice} /></details>
+        {hasQuality && <details className="quality-disclosure panel"><summary>附加页面质量 · 不参与目标 Bug 判定</summary><QualityPanel run={run} activeDevice={activeDevice} /><div className="finding-list">{qualityFindings.map(finding => <FindingCard key={finding.id} finding={finding} />)}</div></details>}
         <section className="metrics-strip panel">
           <div><Monitor size={18} /><span>设备</span><strong>{run.metrics.testedDevices}</strong></div>
           <div><SquareTerminal size={18} /><span>Console errors</span><strong>{run.metrics.consoleErrors}</strong></div>
           <div><Globe2 size={18} /><span>Network errors</span><strong>{run.metrics.networkErrors}</strong></div>
-          <div><Eye size={18} /><span>A11y issues</span><strong>{run.metrics.accessibilityIssues}</strong></div>
-          <div><Gauge size={18} /><span>Performance</span><strong>{run.metrics.performanceIssues ?? 0}</strong></div>
+          {hasQuality && <div><Eye size={18} /><span>A11y issues</span><strong>{run.metrics.accessibilityIssues}</strong></div>}
+          {hasQuality && <div><Gauge size={18} /><span>Performance</span><strong>{run.metrics.performanceIssues ?? 0}</strong></div>}
           <div><Clock3 size={18} /><span>Duration</span><strong>{formatDuration(run.metrics.durationMs)}</strong></div>
         </section>
       </div>

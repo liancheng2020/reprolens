@@ -75,6 +75,7 @@ export interface CreateRunInput {
   expected: string;
   devices: DeviceName[];
   baselineRunId?: string;
+  qualityScan?: boolean;
   qualityGate?: QualityGateConfig;
 }
 

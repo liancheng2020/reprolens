@@ -1,4 +1,4 @@
-import type { BusinessReport, ReproPlan, ReproStep, ReproTarget } from "./types";
+import type { BusinessReport, ReproPlan, ReproStep, ReproTarget, StepEvidence } from "./types";
 import "./business.css";
 
 export const verdictLabels = { reproduced: "已复现", not_reproduced: "此路径未复现", inconclusive: "证据不足" };
@@ -55,18 +55,25 @@ export function PlanEditor({ plan, onChange }: { plan: ReproPlan; onChange: (pla
 
 export function BusinessEvidence({ report }: { report?: BusinessReport }) {
   if (!report) return <section className="business-panel panel"><h3>旧版质量扫描记录</h3><p>此记录没有 v0.5 业务断言，不能据此证明目标 Bug。请重新生成复现计划。</p></section>;
+  const critical = report.steps.filter(step => step.status === "failed" || step.status === "blocked");
+  const remaining = report.steps.filter(step => step.status !== "failed" && step.status !== "blocked");
   return <section className="business-panel panel">
     <div className="panel-heading"><div><span className="section-kicker">BUSINESS EVIDENCE</span><h3>目标问题 · 步骤证据</h3></div><span>核心覆盖 {report.covered}/{report.total}</span></div>
     <div className="business-devices">{report.devices.map(item => <span className={"business-badge " + item.verdict} key={item.device}>{item.device} · {verdictLabels[item.verdict]}</span>)}</div>
     {!report.steps.length && <p>尚无业务步骤证据。未确认计划的任务不会自动探索页面。</p>}
-    {report.steps.map(step => <details className={"business-step " + step.status} key={step.device + step.index} open={step.status === "failed" || step.status === "blocked"}>
+    {critical.map(step => <EvidenceStep key={step.device + step.index} step={step} />)}
+    {!!remaining.length && <details className="quality-disclosure"><summary>其他步骤 · {remaining.length} 项</summary>{remaining.map(step => <EvidenceStep key={step.device + step.index} step={step} />)}</details>}
+    <p className="plan-help">复现结论只来自已确认的核心检查。执行受阻不等于产品 Bug；附加质量问题不参与判定。</p>
+  </section>;
+}
+
+function EvidenceStep({ step }: { step: StepEvidence }) {
+  return <details className={"business-step " + step.status} open={step.status === "failed" || step.status === "blocked"}>
       <summary><span>{step.device} · {step.index + 1}. {step.title}</span><b>{states[step.status]}</b></summary>
       <dl><dt>作用</dt><dd>{step.phase === "check" ? "核心检查" : "前置准备"}</dd><dt>期望</dt><dd>{step.expected}</dd><dt>实际</dt><dd>{step.actual}</dd>
         {step.target && <><dt>目标</dt><dd>{step.target.by} · {step.target.value}</dd></>}
         {step.detail && <><dt>说明</dt><dd><pre>{step.detail}</pre></dd></>}
       </dl>
       <div className="business-shots">{[["操作前", step.beforeUrl], ["操作后", step.afterUrl]].map(([label, url]) => url && <a key={label} href={url} target="_blank" rel="noreferrer"><span>{label}</span><img src={url} alt={label + "证据"} loading="lazy" /></a>)}</div>
-    </details>)}
-    <p className="plan-help">复现结论只来自已确认的核心检查。执行受阻不等于产品 Bug；附加质量问题不参与判定。</p>
-  </section>;
+    </details>;
 }

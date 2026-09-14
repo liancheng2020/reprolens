@@ -253,7 +253,7 @@ export class BrowserScanner {
           colorScheme: "dark"
         });
         const page = await context.newPage();
-        await installPerformanceObservers(page);
+        if (input.qualityScan) await installPerformanceObservers(page);
         const consoleErrors: string[] = [];
         const pageErrors: string[] = [];
         const networkErrors: Array<{ url: string; status: number }> = [];
@@ -285,8 +285,11 @@ export class BrowserScanner {
         screenshots.push(screenshot);
         await callbacks.screenshot(screenshot);
 
-        const audit = await auditPage(page, deviceName, consoleErrors, networkErrors, pageErrors);
-        qualityMetrics.push({ device: deviceName, vitals: audit.vitals! });
+        const audit: AuditSnapshot = input.qualityScan
+          ? await auditPage(page, deviceName, consoleErrors, networkErrors, pageErrors)
+          : { device: deviceName, viewport: device, consoleErrors, networkErrors, pageErrors,
+              horizontalOverflow: 0, missingAlt: [], unlabeledControls: [], clippedElements: [] };
+        if (audit.vitals) qualityMetrics.push({ device: deviceName, vitals: audit.vitals });
         const deviceFindings = buildFindings(audit);
         consoleErrorCount += consoleErrors.length + pageErrors.length;
         networkErrorCount += networkErrors.length;
@@ -300,7 +303,7 @@ export class BrowserScanner {
       await browser.close();
     }
 
-    await callbacks.step("汇总业务断言与附加质量报告", `${evidence.length} 条步骤证据`);
+    await callbacks.step("汇总目标问题证据", `${evidence.length} 条步骤证据 · 附加质量扫描${input.qualityScan ? "已开启" : "未开启"}`);
     const business = businessReport(input, evidence);
     const verdict = reportVerdict(business);
     const label = verdict === "reproduced" ? "目标问题已复现" : verdict === "not_reproduced" ? "此路径未复现" : "证据不足";

@@ -93,7 +93,7 @@ export function buildFindings(audit: AuditSnapshot): Finding[] {
     add({
       category: "console",
       severity: "high",
-      title: "用户操作触发浏览器错误",
+      title: "运行期间捕获浏览器错误",
       description: messages[0]?.slice(0, 220) || "浏览器控制台出现错误。",
       evidence: `共捕获 ${messages.length} 条错误`,
       recommendation: "根据操作时间线定位触发错误的事件处理器，并补充异常状态展示。"
@@ -105,7 +105,7 @@ export function buildFindings(audit: AuditSnapshot): Finding[] {
     add({
       category: "network",
       severity: "high",
-      title: "关键操作出现失败请求",
+      title: "运行期间捕获失败请求",
       description: `${first.status} ${first.url}`,
       evidence: `共捕获 ${audit.networkErrors.length} 个 HTTP 4xx/5xx 响应`,
       recommendation: "检查接口响应与前端错误分支，确保失败时提供明确反馈。"
