@@ -5,6 +5,12 @@ import type { RepositoryConfig } from "./types.js";
 export const REPORT_MARKER = "<!-- reprolens-report -->";
 
 export function checkConclusion(run: ReproRun): "success" | "failure" | "neutral" {
+  const fix = run.verification?.business;
+  if (fix) {
+    if (run.status === "failed" || ["still_reproduced", "regressed"].includes(fix.status)) return "failure";
+    if (fix.status !== "fixed") return "neutral";
+    return run.quality?.gate.status === "failed" ? "failure" : "success";
+  }
   if (run.business) {
     if (run.status === "failed" || run.verdict === "reproduced") return "failure";
     if (run.verdict !== "not_reproduced" || !run.business.total || run.business.covered !== run.business.total) return "neutral";
@@ -25,7 +31,7 @@ export function buildGitHubReport(run: ReproRun): string {
     ? run.findings.slice(0, 10).map((item) => `- **[${item.severity}] ${item.title}**（${item.device} / ${item.category}）：${item.evidence}`).join("\n")
     : "- 未发现结构化异常";
   const verification = run.verification
-    ? `\n- 修复验证：**${run.verification.status}**（评分变化 ${run.verification.scoreDelta >= 0 ? "+" : ""}${run.verification.scoreDelta}）`
+    ? `\n- 修复验证：${run.verification.business?.summary ?? "旧记录仅有辅助质量/像素对比，不作为业务修复证明。"}`
     : "";
   const quality = run.quality
     ? `\n- 质量门禁：**${run.quality.gate.status}**${run.quality.gate.reasons.length ? `（${run.quality.gate.reasons.join("；")}）` : ""}\n- 可访问性问题：${run.quality.categoryCounts.accessibility}；性能问题：${run.quality.categoryCounts.performance}`

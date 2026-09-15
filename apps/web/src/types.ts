@@ -164,6 +164,7 @@ export interface VisualComparison {
 }
 
 export interface VerificationResult {
+  business?: BusinessVerification;
   baselineRunId: string;
   status: VerificationStatus;
   scoreDelta: number;
@@ -171,6 +172,24 @@ export interface VerificationResult {
   introducedFindings: number;
   summary: string;
   comparisons: VisualComparison[];
+}
+
+export interface BusinessVerification {
+  version: 1;
+  status: "fixed" | "still_reproduced" | "regressed" | "inconclusive" | "not_comparable" | "no_baseline_failure";
+  comparable: boolean;
+  summary: string;
+  originalFailures: number;
+  resolvedFailures: number;
+  otherFailures: number;
+  steps: Array<{
+    device: DeviceName;
+    index: number;
+    title: string;
+    phase: "setup" | "check";
+    baseline?: StepEvidence;
+    current?: StepEvidence;
+  }>;
 }
 
 export interface ReproRun {

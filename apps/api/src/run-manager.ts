@@ -181,17 +181,19 @@ export class RunManager {
         const baseline = await this.store.get(run.input.baselineRunId);
         if (!baseline) throw new Error("基线任务在验证过程中不可用");
         await this.push(run, "step", "生成 Before / After 像素对比", `${run.screenshots.length} 个设备`, "success");
-        const comparisons = await this.visualDiff.compare(baseline, run);
-        run.verification = buildVerification(baseline, run, comparisons);
-        const averageDiff = comparisons.length
-          ? comparisons.reduce((total, item) => total + item.mismatchRatio, 0) / comparisons.length
-          : 0;
+        run.verification = buildVerification(baseline, { ...run, status: "completed" }, []);
+        try {
+          const comparisons = await this.visualDiff.compare(baseline, run);
+          run.verification = buildVerification(baseline, { ...run, status: "completed" }, comparisons);
+        } catch (error) {
+          await this.push(run, "step", "辅助像素对比不可用", error instanceof Error ? error.message : "截图对比失败", "warning");
+        }
         await this.push(
           run,
           "comparison",
           "修复验证完成",
-          `${run.verification.status} · 平均像素变化 ${(averageDiff * 100).toFixed(2)}%`,
-          run.verification.status === "regressed" ? "warning" : "success"
+          run.verification.business!.summary,
+          run.verification.business!.status === "fixed" ? "success" : "warning"
         );
       }
 
@@ -203,6 +205,10 @@ export class RunManager {
       run.status = "failed";
       run.completedAt = new Date().toISOString();
       run.error = error instanceof Error ? error.message : "Unknown scanner error";
+      if (run.input.baselineRunId) {
+        const baseline = await this.store.get(run.input.baselineRunId);
+        if (baseline) run.verification = buildVerification(baseline, run, []);
+      }
       await this.push(run, "error", "任务执行失败", run.error, "error");
     } finally {
       this.finishStream(id);

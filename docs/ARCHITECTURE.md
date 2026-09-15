@@ -1,129 +1,84 @@
-# ReproLens 架构
+# 架构设计
 
-> v0.5 当前设计见 [业务断言设计说明](VERSIONS.md#v0-5-design)。下文保留历史架构演进；当前主路径由确认计划驱动，不再使用盲目动作降级或 Console/Network 错误直接判定复现。
+本文描述当前实现；使用操作见 [使用说明](USAGE.md)，验证证据见 [测试与评测](VALIDATION.md)。
 
-## 总览
+## 定位与主流程
+
+ReproLens 面向前端、测试和开源维护者，将问题描述转成可确认、可执行、可核查的浏览器复现流程。一级入口是工作台和运行记录；评测属于开发者工具，通用质量审计是可选补充。
 
 ```text
-React Dashboard
-  │ POST /api/runs 或 /api/github/issues/import
-  │ GET  /api/runs/:id/events
-  ▼
-Run Manager ───────────────► JSON Run Store
-  │                              │
-  │ invokes                      └─ data/runs
-  ▼
-Browser Scanner
-  ├─ DeepSeek Planner
-  ├─ Playwright Chromium
-  ├─ axe-core WCAG Audit
-  ├─ Web Vitals Collector
-  ├─ Screenshot Collector
-  ├─ Console/Network Collector
-  └─ Deterministic Analyzer
-          │
-          ▼
-  Evidence + Quality Gate + Regression Test
-          │
-          ▼
- GitHub Check + Issue Report + Actions Artifact
+React 工作台：URL / 问题 / 预期 / 设备
+  -> POST /api/plans
+  -> 可选初始页面观察 -> DeepSeek 候选计划 -> Zod 校验
+  -> 用户编辑与确认
+  -> POST /api/runs -> RunManager -> Playwright 顺序执行
+  -> 步骤证据 / 截图 / 执行事件 -> JSON Store + SSE -> 结果页
+  -> POST /api/runs/:id/verify -> 基线计划重放
+  -> 同标准核对 + 步骤前后比较 -> verification.business
+  -> 回归测试 / 可选 GitHub 报告
 ```
 
 ## 模块职责
 
-### React Dashboard
+源码根目录为 `apps/api/src`，前端位于 `apps/web/src`。
 
-负责任务输入、运行历史、实时状态、设备截图、结构化发现和测试代码展示。前端通过 EventSource 订阅 SSE，不需要高频轮询。
+| 模块 | 职责 |
+| --- | --- |
+| `repro-plan.ts` | Zod 契约、计划字段与步骤约束、规划提示 |
+| `provider.ts` | DeepSeek 调用、JSON/计划校验、错误分类与模板降级 |
+| `page-observation.ts` | 授权 origin 下提取有限初始页面元素元数据 |
+| `run-manager.ts` / `store.ts` | queued/running/completed/failed 状态、证据落盘与 SSE |
+| `scanner.ts` | 各设备隔离浏览器上下文、执行调度、截图和运行错误采集 |
+| `business.ts` / `ui-check.ts` | 定位、动作、业务断言、有限 UI 探针 |
+| `business-test.ts` | 根据已确认计划确定性生成 Playwright 测试 |
+| `business-verification.ts` | 核对检查标准，关联步骤证据，防止误报修复 |
+| `verification.ts` / `visual-diff.ts` | 组织验证结果，保留辅助质量比较与像素 Diff |
+| `analyzer.ts` / `quality.ts` | 附加发现、质量指标、门禁与趋势，不代替业务结论 |
+| `github/` | Issue 导入、Webhook 验签、报告发布及 Check 适配 |
+| `evaluation/` | 固定样本执行器评测及独立模型对照 |
 
-### Run Manager
+模型只提出计划，不直接判断 Bug 或修复成功。它不能返回任意 JavaScript 执行；当前不是多轮原生 Tool Calling 或动态重规划系统。
 
-维护 queued、running、completed、failed 四种状态。每一步都会先写入本地 Run Store，再广播给浏览器，刷新页面后不会丢失结果。
+## 计划与执行契约
 
-### DeepSeek Provider
+- `ReproPlan`：目标、范围、警告和最多 15 个有序步骤。
+- `ReproStep`：动作是 click/input/assert/reload，用途为 setup/check。核心检查前必须有场景可见性或 URL 前置断言。
+- `ReproTarget`：精确 label、placeholder、text、role 或高级 CSS。执行时逐步重新定位，目标歧义不猜测。
+- `StepEvidence`：设备、步骤索引、用途、状态、期望、实际、定位和前后截图。
+- `BusinessReport`：各设备结论、核心覆盖、步骤列表与测试生成状态。
 
-当前承担两类判断：
+输入验证使用键盘输入和失焦后值检查，不用直接修改 DOM 绕过缺陷。UI 遮挡检查使用目标边界与中心命中，不自动滚动来消除待验证问题，不代表设计稿一致性或每个像素无遮挡。
 
-1. 根据 Bug 描述和可交互元素选择复现动作。
-2. 根据确定性发现总结证据是否支持 Bug。
+受限响应检查依据操作后的同源路径、方法与唯一匹配；时间关联不是后端因果证明。每步有超时，每设备有 90 秒调度预算；预算耗尽不再调度新步骤，在途步骤仍受各自超时限制。
 
-模型不能返回任意 JavaScript。动作会被收敛为 click、fill、wait，并再次校验目标元素 ID 和最大步数。API 故障时自动切换本地规则。
+未确认计划、前置受阻或定位歧义不能冒充 Bug。核心断言失败可判 reproduced，完整核心检查通过才判此路径 not_reproduced；不足以判断时为 inconclusive。执行状态与业务结论分开记录。
 
-### Browser Scanner
+## 模型输入与失败处理
 
-为每个设备创建隔离 BrowserContext，收集 Console、Page Error、HTTP 失败请求、DOM 尺寸和截图。当前采用顺序执行，方便控制资源占用并保持时间线可读；并发执行将在有明确性能需求时独立演进。
+模型收到用户描述和可选初始观察，不接收整页 DOM。JSON 输出模式、Zod 与人工确认分别约束格式、契约和业务语义；temperature=0 不保证确定性。
 
-### Deterministic Analyzer
+模型调用超时为 25 秒，自动重试关闭。未配置、非法 JSON、非法计划、超时或请求失败返回带原因的待编辑模板，不算模型成功。模型提出的副作用授权统一重置为 false。
 
-模型不负责像素尺寸、HTTP 状态和 DOM 属性判断。分析器从浏览器原始数据生成结构化 Finding，并按根因去重计算评分。
+详细规划调用包含模型、Prompt 版本、实际 token、耗时和校验错误；缺失用量为 null。合成模型对照可保存原始输出，普通规划不会将原文落盘，也不能宣称每个运行已经完整关联所有模型 Trace。
 
-### Page Quality Analyzer
+## 修复验证
 
-`scanner.ts` 在页面加载前注册 PerformanceObserver，操作完成后读取 LCP、CLS、INP、FCP、TTFB 和加载指标，并运行 axe-core WCAG 2 A/AA 审计。持久化前只保留规则、有限节点、选择器和坐标，避免保存 axe 原始大对象。
+业务结论来自 `verification.business`：完整计划对象、排序后的设备列表、问题与预期必须一致，允许目标 URL 变化。按设备和步骤索引关联证据，拒绝重复、越界和阶段不一致的记录。
 
-`quality.ts` 是无副作用规则模块，负责分类统计、设备评分、质量门禁和最近 30 次趋势。默认门禁检查最低评分、高严重度、可访问性和性能问题数；GitHub 与 Web 任务共用同一结果。
+基线须确有核心失败，本次所有步骤须通过，才给出范围内修复通过。缓存的 covered/total 不代替逐项证据；标准改变、缺步骤、执行受阻或基线未复现不能判修复成功。完整状态表见 [使用说明](USAGE.md#复现与修复)。
 
-### Regression Test Generator
+旧 `verification.status` 是辅助质量/视觉结果。像素 Diff 失败只产生警告，不覆盖业务判定；旧记录不会被追溯包装为已验证业务修复。完整计划比较偏保守，文案变更也可能导致不可比较。
 
-测试代码在本地确定性生成，只使用本轮真实操作过的控件，以及捕获到的 Network、Console 和布局证据。DeepSeek 不接收完整 DOM，也不决定最终选择器。
+## 存储与协作
 
-### Fix Verification
+运行 JSON 位于 `data/runs/{id}.json`，截图位于 `artifacts/{id}/`，均默认忽略提交。执行事件持久化后经 SSE 广播，前端可重新获取保存的结果；不等于服务重启后自动恢复执行中的任务。
 
-`verification.ts` 是无副作用的规则模块：按 `category + title` 对问题根因去重，对比基线与当前运行的质量分和问题集合，输出稳定的验证状态。它不读取文件，也不调用模型，因此可以独立测试和复用到 GitHub Checks。
+GitHub 适配层复用 RunManager，处理 Issue、提交和发布状态；评论按隐藏标记更新，Webhook 使用原始请求体 HMAC 验签。未确认计划的自动任务不能证明问题。不可比较与证据不足的业务验证映射为 neutral；用户启用的独立质量门禁仍可阻断 Check。
 
-`visual-diff.ts` 只负责图片 I/O：读取同设备的两张 PNG，在页面高度不同的情况下归一化到白色画布，调用 Pixelmatch 生成差异图并返回变化像素数。运行编排仍由 Run Manager 负责，模块之间不共享可变状态。
+## 安全与边界
 
-### GitHub Integration
+仅用于本机或可信授权测试站点。计划确认不等于完整授权系统；危险动作识别是启发式，输入和页面加载本身也可能触发副作用。
 
-GitHub 集成位于 `apps/api/src/github`，是围绕现有 Run Manager 的适配层：
+页面观察有 origin 与请求约束，详见 [使用说明](USAGE.md#页面观察)。执行侧不能据此宣称拥有同等的完整网络隔离。密码控件截图遮罩与有限文本脱敏不保证敏感数据全部消除。
 
-- `client.ts`：封装 Issues、Contents、Commits、Comments 和 Checks REST API，支持注入 fetch 测试。
-- `issue-parser.ts`：解析 Issue URL、Markdown 字段和 `.github/reprolens.yml`，输出标准 `CreateRunInput`。
-- `service.ts`：按仓库、Issue 与 commit SHA 幂等编排任务，等待结果并持久化发布状态。
-- `publisher.ts`：生成纯 Markdown 报告、映射 Check 结论并 upsert Issue 评论。
-- `webhook.ts`：对原始请求体执行 HMAC-SHA256 验签，只接受 Issue labeled 事件。
-- `routes.ts`：提供导入、发布、状态和可选 Webhook HTTP 接口。
-
-`github-runner.ts` 是无服务部署入口。GitHub Actions 调用它后复用同一个 GitHubService 和 Run Manager，最终输出报告、JSON 和测试文件。平台事件不会直接调用扫描器，后续替换 GitHub 为 GitLab 时也无需改变核心执行链。
-
-## 数据结构
-
-每个 Run 包含：
-
-- 输入 URL、Issue、Expected、Devices
-- 状态、当前步骤、创建与结束时间
-- Provider、模型和执行指标
-- TimelineItem 数组
-- Finding 数组
-- 可选的设备级 Web Vitals、分类统计和质量门禁结果
-- ScreenshotArtifact 数组
-- 可选的 baselineRunId 和 VerificationResult
-- verdict、confidence、score、summary
-- generatedTest
-- 可选 GitHub source：repository、issue、commit SHA、触发来源、Check、评论和发布状态
-
-持久化位置为 `data/runs/{runId}.json`，截图位于 `artifacts/{runId}`。两个目录都不会进入 Git。
-
-## 安全模型
-
-- URL 只接受 HTTP 和 HTTPS。
-- 请求体限制为 256 KB。
-- 模型动作使用白名单和步数上限。
-- 模型不能执行 evaluate、shell、文件系统或任意导航。
-- API Key 只从被忽略的 `.env` 读取。
-- 完整 DOM 不会发送给外部模型。
-- 错误响应不会输出 API Key。
-- GitHub Token 与 Webhook Secret 只从环境变量读取，前端只能看到是否已配置。
-- Webhook 使用 `X-Hub-Signature-256` 和常量时间比较校验原始 UTF-8 请求体。
-- GitHub Actions 权限显式限制为 contents 只读、issues 与 checks 写入。
-- Issue + commit SHA 形成幂等键，报告评论使用固定隐藏标记更新。
-
-当前本地运行模式允许访问 localhost，方便测试本地项目。因此它不是可直接暴露公网的多租户服务。公网部署前必须补充身份认证、DNS/IP 重绑定防护、私网地址阻断、URL allowlist、任务配额和容器级隔离。
-
-## 扩展点
-
-- Provider 接口：增加 OpenAI、Ollama 或其他 OpenAI-compatible Provider。
-- Analyzer：增加新的性能预算与业务自定义规则。
-- Store：从 JSON 切换 PostgreSQL 和对象存储。
-- Queue：从进程内任务切换 Redis/BullMQ。
-- Trigger：增加 GitHub App 安装流程和 PR check_suite。
-- Worker：把 Browser Scanner 放入一次性 Docker 容器。
+尚未实现公网多租户、自动代码修复、托管登录态、动态重规划或完整网络沙箱。开放公网前优先补认证、URL/DNS/IP 限制、隔离 Worker、任务配额和证据保护；队列、数据库等应由实际需求驱动。

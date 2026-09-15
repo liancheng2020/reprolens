@@ -20,12 +20,15 @@ const runIds = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   page.on("pageerror", e => errors.push(e.message));
-  const waitRun = async id => {
+  const waitRun = async (id, allowFailure = false) => {
     runIds.push(id);
     const deadline = Date.now() + 120_000;
     while (Date.now() < deadline) {
       const run = await (await page.request.get(`${origin}/api/runs/${id}`)).json();
-      if (run.status === "failed") throw new Error(run.error);
+      if (run.status === "failed") {
+        if (allowFailure) return run;
+        throw new Error(run.error);
+      }
       if (run.status === "completed") return run;
       await delay(500);
     }
@@ -65,6 +68,10 @@ try {
   const fixed = await waitRun((await (await verified).json()).id);
   assert.deepEqual(fixed.input.plan, buggy.input.plan);
   assert.deepEqual(fixed.business.devices.map(d => d.verdict), ["not_reproduced", "not_reproduced"]);
+  assert.equal(fixed.verification.business.status, "fixed");
+  assert.equal(fixed.verification.business.originalFailures, 1);
+  assert.equal(fixed.verification.business.resolvedFailures, 1);
+  await page.getByRole("heading", { name: "范围内修复验证通过", exact: true }).waitFor();
   await page.getByRole("heading", { name: "此路径未复现", exact: true }).waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await page.getByRole("button", { name: "编辑计划并重新复现", exact: true }).evaluate(el => parseFloat(getComputedStyle(el).fontSize)) > 0);
@@ -81,6 +88,25 @@ try {
 
   const demos = await (await page.request.get(`${origin}/api/demos`)).json();
   const profile = demos.find(d => d.id === "profile");
+  for (const [target, expectedStatus] of [[buggy.input.url, "still_reproduced"], [origin + "/demo/profile", "inconclusive"]]) {
+    const response = await page.request.post(origin + "/api/runs/" + buggy.id + "/verify", { data: { url: target } });
+    assert.equal(response.status(), 202);
+    const replay = await waitRun((await response.json()).id);
+    assert.equal(replay.verification.business.status, expectedStatus);
+  }
+  const changedPlan = structuredClone(buggy.input.plan);
+  changedPlan.steps.find(s => s.assertion === "unobscured").assertion = "visible";
+  const changedResponse = await page.request.post(origin + "/api/runs", { data: {
+    ...buggy.input, url: fixUrl, baselineRunId: buggy.id, plan: changedPlan
+  } });
+  assert.equal(changedResponse.status(), 202);
+  const changed = await waitRun((await changedResponse.json()).id);
+  assert.equal(changed.verification.business.status, "not_comparable");
+  const failedResponse = await page.request.post(origin + "/api/runs/" + buggy.id + "/verify", { data: { url: "http://127.0.0.1:1/" } });
+  assert.equal(failedResponse.status(), 202);
+  const failed = await waitRun((await failedResponse.json()).id, true);
+  assert.equal(failed.status, "failed");
+  assert.equal(failed.verification.business.status, "inconclusive");
   const qualityResponse = await page.request.post(`${origin}/api/runs`, { data: { ...profile, url: `${origin}/demo/profile?fixed=1`, planConfirmed: true, qualityScan: true } });
   assert.equal(qualityResponse.status(), 202);
   const qualityRun = await waitRun((await qualityResponse.json()).id);

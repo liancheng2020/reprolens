@@ -1,4 +1,5 @@
 import type { Finding, ReproRun, VerificationResult, VerificationStatus, VisualComparison } from "./types.js";
+import { verifyBusiness } from "./business-verification.js";
 
 function findingKeys(findings: Finding[]): Set<string> {
   return new Set(findings.map((finding) => `${finding.category}:${finding.title}`));
@@ -40,10 +41,11 @@ export function buildVerification(
   const currentFindings = findingKeys(current.findings);
   const resolvedFindings = difference(baselineFindings, currentFindings);
   const introducedFindings = difference(currentFindings, baselineFindings);
-  const scoreDelta = (current.score ?? 0) - (baseline.score ?? 0);
+  const scoreDelta = current.score !== undefined && baseline.score !== undefined ? current.score - baseline.score : 0;
   const status = verificationStatus(scoreDelta, resolvedFindings, introducedFindings, comparisons);
 
   return {
+    business: verifyBusiness(baseline, current),
     baselineRunId: baseline.id,
     status,
     scoreDelta,

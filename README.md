@@ -1,68 +1,30 @@
 # ReproLens
 
-> 复现 Web UI 与交互问题，留下可核查的证据，并验证修复。
+> 把 Web Bug 描述转成可执行的复现步骤，用证据验证问题与修复。
 
-面向前端开发者、测试工程师和开源维护者的可视化 Bug 复现工具。输入目标页面、问题与期望结果，确认计划后由 Playwright 执行，并展示每一步的期望、实际结果和截图。
+面向前端开发者、测试工程师和开源维护者的 Bug 复现工具。DeepSeek 辅助生成计划，用户确认后由 Playwright 执行，输出步骤证据、修复对比和回归测试。
 
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B-5FA04E)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-visual_dashboard-61DAFB)](https://react.dev/)
-[![Playwright](https://img.shields.io/badge/Playwright-browser_worker-2EAD33)](https://playwright.dev/)
-[![License](https://img.shields.io/badge/license-MIT-8CF7C7)](LICENSE)
+**描述问题 → 确认计划 → 浏览器执行 → 查看证据 → 验证修复**
 
 ## 操作演示
 
-[![点击观看 ReproLens 真实操作演示](docs/media/reprolens-demo-poster.png)](docs/media/reprolens-demo.mp4)
+[![观看 ReproLens 操作演示](docs/media/reprolens-demo-poster.png)](docs/media/reprolens-demo.mp4)
 
-[▶ 观看 / 下载视频（约 41 秒，MP4）](docs/media/reprolens-demo.mp4)
+[观看 / 下载视频](docs/media/reprolens-demo.mp4)（约 41 秒）。视频为此前的真实执行录屏，使用人工确认的安全模板，不演示模型规划；结果页以当前代码为准。
 
-输入框无法输入 → 确认计划 → 真实执行 → 查看失败证据 → 修复后重放 → 核心检查通过。
+## 核心能力
 
-视频使用本地真实 API 和 Chromium，带中文字幕、无配音；采用无 Key 安全模板并人工确认定位，不演示模型规划。如果无法直接播放，请下载后打开。
+- **辅助规划**：结合问题描述与可选的页面结构观察生成检查计划，支持人工编辑和确认。
+- **真实复现**：检查输入失焦丢值、按钮遮挡、文本与状态等问题；前置条件失败或定位歧义时报告证据不足。
+- **证据可查**：展示桌面与手机视口下的步骤状态、期望、实际值、截图和实时执行事件。
+- **修复验证**：沿用相同计划、设备和预期逐项对比；缺步骤或改变标准不会被判为修复成功。
+- **回归与协作**：生成 Playwright 测试，支持 GitHub Issue 导入和结果发布。
 
-## 当前版本：v0.5.0
-
-**业务断言驱动的复现**：围绕用户指定的问题执行检查，页面质量报告只作为补充，不用于判断目标 Bug 是否复现。
-
-- **确认计划**：编辑前置场景、目标控件、动作、测试值和核心检查项；DeepSeek 可辅助规划，无 Key 时提供待编辑的安全模板。
-- **真实执行**：支持键盘输入与失焦后值验证，以及文本、状态、URL 和受限响应检查；目标不唯一或前置条件失败时报告证据不足。
-- **可视化证据**：多设备截图、实时执行时间线，以及逐步的通过、失败、受阻和跳过状态。
-- **修复验证**：重放已确认的计划，检查修复后的业务结果，并提供 Before / After / Pixel Diff 辅助对比。
-- **测试与协作**：生成 Playwright 回归测试，支持 GitHub Issue 导入和结果发布；未确认计划的自动任务不能证明目标问题。
-- **可选质量扫描**：默认关闭；开启后补充 WCAG、Web Vitals、通用布局与质量门禁。Console / Network 错误始终保留为辅助线索，不直接决定目标 Bug 是否复现。
-
-当前为用户确认的顺序计划，不支持动态分支重规划。定位建议需人工核对；“此路径未复现”不等于全站无 Bug，“已生成测试”不等于已运行验证。
-
-### 页面观察与模型对照
-
-生成计划前可选择观察授权页面的初始控件结构，帮助模型提出有依据的定位；观察和执行分别授权。新增 `npm run eval:model`，在 3 个合成输入场景上对比无观察 / 有观察计划，保留真实失败、调用用量与双版本结果。配置、安全边界和判分口径见 [页面观察与模型对照](docs/MODEL_COMPARISON.md)。
-
-## 两条复现示例
-
-工作台可直接载入固定示例计划，核对确认后走真实任务链路，无需调用模型：
-
-- **UI：手机弹窗按钮被遮挡**。对比桌面和手机，检查确定按钮是否完整位于视口内、中心是否被工具栏遮挡，再验证点击反馈。
-- **交互：输入失焦后内容丢失**。键盘输入后检查值，失焦后再次检查，检出内容回滚。
-
-任务完成后点击 **验证修复**，示例会预填修复版地址，使用同一计划重放。结果页优先显示问题描述、预期行为、验证范围和失败/受阻步骤；其他步骤与截图 Diff 按需展开。只有实际生成的附加质量报告才展示，旧记录仍可查看。
-
-API 创建任务时省略 `qualityScan` 或传 `false`，不执行通用质量扫描；传 `true` 才启用。`qualityGate.enabled` 仅控制已开启扫描的门禁判定，不会自动开启扫描。未扫描不等于质量满分，也不等于没有可访问性或性能问题。
-
-当前不支持仅凭一句“界面不好看”自动判断设计正确性。UI 检查有明确范围：目标边界和中心命中，不保证完整区域无遮挡、所有祖先裁剪或设计稿一致性。
-
-## 开发者自检
-
-评测实验室位于左侧折叠的 **开发者工具** 中，用于检查 ReproLens 自身，不是用户复现 Bug 的必经步骤。保留 20 条固定用例和双版本回归验证。
-
-```sh
-npm run eval:smoke
-# 按需运行全部 20 条：npm run eval:full
-```
-
-无需 API Key；CLI 自动启动隔离演示服务器。这里验证的是执行器与回归测试，不是模型规划能力。设计、指标口径和产物说明见 [评测文档](docs/EVALUATION.md)。
+内置“手机弹窗按钮被遮挡”和“输入失焦后内容丢失”两组缺陷/修复示例，无需模型 Key 即可体验完整执行流程。
 
 ## 快速开始
 
-需要 Node.js 20+（推荐 22）。以下命令在仓库根目录执行，Windows PowerShell、macOS 和 Linux 通用。
+需要 Node.js 20+。在仓库根目录执行：
 
 ```sh
 npm install
@@ -70,43 +32,39 @@ npm run browser:install
 npm run dev
 ```
 
-打开 [http://localhost:5173](http://localhost:5173)，填写问题 → 点击“生成复现计划” → 编辑并确认检查项 → 点击“按确认计划执行”。
+打开 [http://localhost:5173](http://localhost:5173)，载入示例或填写页面、问题与预期，确认计划后执行。
 
-**可选模型配置**：将 `.env.example` 复制为 `.env`（已有则跳过），填写 `DEEPSEEK_API_KEY` 后启动或重启服务。不配置也能使用安全模板和浏览器执行。
+**启用模型（可选）**：将 [`.env.example`](.env.example) 复制为 `.env`，填写 `DEEPSEEK_API_KEY` 后重启服务。不配置时可使用固定示例和待编辑模板。
 
-复制命令：Windows 使用 `Copy-Item .env.example .env`；macOS / Linux 使用 `cp .env.example .env`。
-
-**构建后运行**：
+构建后运行：
 
 ```sh
 npm run build
 npm start
 ```
 
-打开 [http://127.0.0.1:8787](http://127.0.0.1:8787)，API 同时托管前端。项目面向本地使用，不提供在线任务提交服务。
+打开 [http://127.0.0.1:8787](http://127.0.0.1:8787)，API 同时托管前端。
 
-## 开发与验证
+## 技术与验证
+
+React / TypeScript 工作台 + Node.js / Express API + DeepSeek 规划 + Zod 校验 + Playwright 执行 + SSE 事件流。
 
 ```sh
-npm run check
+npm run check       # 单元测试与前后端构建
+npm run eval:smoke  # 无需 Key 的执行器冒烟验证
 ```
 
-执行单元测试及前后端构建。浏览器专项验证和已知限制见 [测试报告](docs/TEST_REPORTS.md)。
+通过缺陷/修复双版本检查执行与导出测试；另有小规模模型观察对照。样本结果与适用范围见 [测试与评测](docs/VALIDATION.md)。
 
-重新录制演示：先安装支持 `libx264` 的 FFmpeg（加入 PATH，或设置 `FFMPEG_PATH` 为可执行文件路径），执行 `npm run build`，再运行 `node scripts/record-demo.mjs`。脚本使用隔离的本地服务与测试页面，不调用模型或覆盖已有任务；更新 `docs/media` 中的 H.264 MP4 视频和封面，原始录像与执行证据保留在终端输出的临时目录。
+## 使用边界
 
-## 项目与文档
+- 仅用于已授权的本机或可信测试环境，不应直接开放为任意 URL 的公网执行服务。
+- 模型辅助规划，用户确认后顺序执行；不自动重规划或修改源代码。
+- 结论仅覆盖指定计划和设备；生成测试不代表已自动重跑验证。
+- 通用质量扫描默认关闭，像素变化和质量评分不代替业务修复判定。
 
-- `apps/web`：React 工作台、计划编辑、运行记录和证据展示。
-- `apps/api`：任务管理、Playwright 执行、业务断言、质量分析与 GitHub 集成。
-- `scripts`：验证与录制工具；`data/runs`、`artifacts`：本地任务和截图。
+## 文档
 
-[版本说明与当前设计](docs/VERSIONS.md) · [产品说明](docs/PRODUCT_SPEC.md) · [架构文档](docs/ARCHITECTURE.md) · [测试报告](docs/TEST_REPORTS.md)
-
-GitHub 集成配置见 [仓库配置](.github/reprolens.yml) 和 [Actions 工作流](.github/workflows/reprolens.yml)。本地发布结果需要配置 `REPROLENS_GITHUB_TOKEN`；自动任务仍受计划确认限制。
-
-## 安全与许可
-
-仅对已授权的本机或可信测试环境运行。直接开放公网前，需要补齐身份认证、目标地址限制和任务配额。不要提交真实密钥、个人信息或敏感截图；`.env` 和运行数据默认被 Git 忽略。
+[使用说明](docs/USAGE.md) · [架构](docs/ARCHITECTURE.md) · [测试与评测](docs/VALIDATION.md) · [GitHub 配置](.github/reprolens.yml) · [Actions 工作流](.github/workflows/reprolens.yml)
 
 [MIT License](LICENSE)
