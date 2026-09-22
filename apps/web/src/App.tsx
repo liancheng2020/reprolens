@@ -98,13 +98,9 @@ function Shell({ children, activeView, onHome, onHistory, onEvaluation, config }
           <summary title="开发者工具" aria-label="开发者工具"><Code2 size={18} /><span>开发者工具</span></summary>
           <button className={`nav-item ${activeView === "evaluation" ? "active" : ""}`} aria-current={activeView === "evaluation" ? "page" : undefined} onClick={onEvaluation}><CheckCircle2 size={18} /> 评测实验室</button>
         </details>
-        <div className="agent-card">
-          <div className="agent-card-title"><Bot size={16} /> 规划辅助</div>
-          <p>用户确认后执行</p>
-          <div className="provider-row">
-            <span className="status-dot" />
-            <span>{config?.provider === "deepseek" ? "DeepSeek" : "Fallback"}</span>
-          </div>
+        <div className="planning-status" role="status">
+          <span className="planning-status-label">计划生成</span>
+          <span>{!config ? "配置未获取" : config.provider === "deepseek" ? "DeepSeek（已配置）" : "规则模式"}</span>
         </div>
         <a className="github-link" href="https://github.com/liancheng2020/reprolens" target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub <ArrowUpRight size={14} /></a>
       </aside>

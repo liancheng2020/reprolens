@@ -8,8 +8,9 @@
 .plan-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .plan-warning { padding: 10px 12px; color: #e6c487; background: #332819; border-radius: 8px; font-size: 13px; line-height: 1.6; margin: 0; }
 .plan-help { color: #9eafbe; line-height: 1.7; font-size: 13px; }
-label.plan-consent { display: flex; flex-direction: row; gap: 10px; align-items: flex-start; margin: 16px 0; font-size: 13px; line-height: 1.6; }
-.plan-consent input { flex: 0 0 auto; width: 16px; margin-top: 3px; }
+.run-form label.plan-consent { display: flex; flex-direction: row; gap: 10px; align-items: flex-start; margin: 16px 0; font-size: 13px; line-height: 1.6; }
+.plan-consent input[type="checkbox"] { flex: 0 0 16px; width: 16px; height: 16px; margin: 1px 0 0; }
+.plan-consent > span { flex: 1; min-width: 0; }
 .business-panel { padding: 24px; }
 .business-panel p { color: #9eafbe; line-height: 1.7; }
 .business-devices { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
@@ -32,4 +33,3 @@ label.plan-consent { display: flex; flex-direction: row; gap: 10px; align-items:
 .quality-disclosure > summary { padding: 18px; cursor: pointer; color: #a9b9c8; }
 .quality-disclosure .quality-panel { border: 0; }
 @media (max-width: 640px) { .plan-fields, .business-shots { grid-template-columns: 1fr; } }
-
