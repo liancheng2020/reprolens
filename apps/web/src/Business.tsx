@@ -14,7 +14,7 @@ export function PlanEditor({ plan, onChange }: { plan: ReproPlan; onChange: (pla
     <div className="panel-heading"><div><span className="section-kicker">REPRODUCTION PLAN · v0.5</span><h3>确认要测的场景与结果</h3></div></div>
     <label><span>复现目标</span><textarea rows={2} value={plan.objective} onChange={e => onChange({ ...plan, objective: e.target.value })} /></label>
     <label><span>验收范围（不在此范围内的结果不会被证明）</span><textarea rows={2} value={plan.scope} onChange={e => onChange({ ...plan, scope: e.target.value })} /></label>
-    {plan.warnings.map((warning, i) => <p className="plan-warning" key={i}>{warning}</p>)}
+    {plan.warnings.length > 0 && <p className="plan-warning">{plan.warnings.join(" ")}</p>}
     <p className="plan-help">定位值需与页面名称完全一致；CSS 为高级选项。匹配多个控件时会停止，不会猜测。请使用合成测试数据，不要填写密码或真实个人信息。</p>
     {plan.steps.map((step, index) => <details className="plan-step" key={index} open={step.target?.value === "" ? true : undefined}>
       <summary className="plan-step-summary"><strong>{index + 1}. {step.title}</strong><small>{step.phase === "check" ? "核心检查" : "前置准备"} · {actions[step.action]}{step.assertion ? ` / ${assertions[step.assertion]}` : ""}{step.target ? ` · ${step.target.by}: ${step.target.value}` : ""}{step.value ? ` · ${step.value}` : ""}</small></summary>

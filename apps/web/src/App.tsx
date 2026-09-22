@@ -272,7 +272,7 @@ function Dashboard({
             {!plan && <label className="plan-consent"><input type="checkbox" disabled={submitting} checked={observeBeforePlan} onChange={e => setObserveBeforePlan(e.target.checked)} /><span>允许访问已授权站点，并将初始页面元素名称发送给模型（首个所选设备，不含输入值）。</span></label>}
             {plan && <PlanEditor plan={plan} onChange={(next) => { setPlan(next); setConfirmed(false); }} />}
             {plan && <label className="plan-consent"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /><span>我已核对目标页面、定位方式、测试数据和核心检查项；所有未覆盖的期望已在范围中明确排除。</span></label>}
-            {plan && <button type="button" className="secondary-button" disabled={submitting} onClick={() => { setPlan(undefined); setConfirmed(false); }}>重新生成计划</button>}
+            {plan && <button type="button" className="secondary-button regenerate-plan" disabled={submitting} onClick={() => { setPlan(undefined); setConfirmed(false); }}><RefreshCw size={14} aria-hidden="true" />重新生成计划</button>}
             {error && <div className="form-error"><AlertTriangle size={15} /> {error}</div>}
             <button className="primary-button" disabled={submitting || Boolean(plan && !confirmed)}>
               {submitting ? <LoaderCircle className="spin" size={18} /> : <Play size={18} fill="currentColor" />}
@@ -510,7 +510,7 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
             <div className="browser-toolbar">
               <div className="traffic"><i /><i /><i /></div>
               <div className="address"><ShieldCheck size={13} /><span>{run.input.url}</span></div>
-              <span className="viewport-label">{screenshot ? `${screenshot.viewport.width} × ${screenshot.viewport.height}` : "capturing"}</span>
+              <span className="viewport-label">{screenshot ? `${screenshot.viewport.width} × ${screenshot.viewport.height}` : isRunning ? "capturing" : "no capture"}</span>
             </div>
             <div className="device-tabs">
               {run.input.devices.map((device) => (
@@ -528,8 +528,14 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
                     <span className="evidence-pin"><AlertTriangle size={14} /> {run.findings.filter((item) => item.device === screenshot.device).length} 条辅助线索</span>
                   )}
                 </div>
-              ) : (
+              ) : isRunning ? (
                 <div className="browser-loading"><div className="scan-line" /><Bot size={34} /><strong>Agent 正在观察页面</strong><span>{run.currentStep}</span></div>
+              ) : (
+                <div className="browser-loading idle">
+                  {run.status === "failed" ? <AlertTriangle size={34} /> : <Eye size={34} />}
+                  <strong>{run.status === "failed" ? "未采集到截图" : "本次运行没有截图证据"}</strong>
+                  <span>{run.status === "failed" ? "执行已终止，原因见上方错误" : run.currentStep}</span>
+                </div>
               )}
             </div>
           </div>

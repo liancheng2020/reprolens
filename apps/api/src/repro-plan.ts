@@ -49,12 +49,13 @@ export const reproPlanSchema = z.object({
   }
 });
 
-export function draftPlan(input: CreateRunInput): ReproPlan {
+export function draftPlan(input: CreateRunInput, errorCode?: string): ReproPlan {
   return {
     version: 1,
     objective: input.issue,
     scope: input.expected,
-    warnings: ["这是待编辑的安全模板。请填写准确的页面标识、目标控件与期望值；系统不会猜测注册入口或自动提交表单。"],
+    // Single warning: states why a template is returned, how to use it, and the safety boundary.
+    warnings: [`${errorCode ? `模型规划未完成（${errorCode}），已返回待编辑模板` : "这是待编辑的安全模板"}：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。`],
     steps: [
       { title: "确认已到达目标页面（请编辑页面标识）", action: "assert", phase: "setup", assertion: "visible", target: { by: "text", value: "请填写目标表单标题" }, allowSideEffect: false },
       { title: "验证目标输入框的输入能力（请编辑控件）", action: "input", phase: "check", target: { by: "label", value: "请填写输入框名称" }, value: "repro-test", allowSideEffect: false }

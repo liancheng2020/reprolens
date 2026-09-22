@@ -31,9 +31,7 @@ export class DeepSeekProvider {
     const trace: PlanningTrace = { model: config.deepseekModel, promptVersion, status: "fallback", durationMs: 0, inputTokens: null, outputTokens: null };
     const fallback = (code: string) => {
       trace.errorCode = code; trace.durationMs = Date.now() - started;
-      const plan = draftPlan(input);
-      plan.warnings.unshift(`模型规划未完成（${code}），返回待编辑模板，不代表模型生成成功。`);
-      return { plan, trace };
+      return { plan: draftPlan(input, code), trace };
     };
     if (!this.client) return fallback("NOT_CONFIGURED");
     try {
