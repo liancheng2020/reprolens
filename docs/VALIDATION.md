@@ -4,6 +4,12 @@
 
 ## 最近验证结果
 
+截至 2026-09-23 的本地记录：
+- `npm run check` 通过：56 条单元测试、API TypeScript 构建和 Web 构建。
+- `REPROLENS_BROWSER_CHANNEL=chrome npm run demo:check` 使用本机 Chrome 和隔离的演示服务，分别验证购物车数量、手机弹窗遮挡、输入失焦丢值三条真实浏览器流程。每条均在缺陷版判定为 `reproduced`，在修复版判定为 `not_reproduced`，并检查核心业务验证状态、步骤与截图。
+- 上述固定演示不调用模型（模型调用次数为 0），不能作为模型规划能力或真实客户网站成功率的证据。浏览器未就绪时，API 会在创建运行前返回 `BROWSER_UNAVAILABLE`；界面显示排查提示并禁用执行。
+- 用模拟浏览器缺失响应验证了工作台的禁用状态和错误提示；1440×1000、390×844 视口均检查了布局。此项仅验证失败反馈，不等同于真实浏览器缺失环境的端到端测试。
+
 截至 2026-09-15 的本地记录：
 - 54 条单元测试通过，前后端 TypeScript 与 Vite 构建通过。
 - 11 个真实本机浏览器任务，覆盖 UI/输入双版本、质量开关、运行错误、仍复现、受阻、标准变更及页面加载失败。
@@ -17,12 +23,15 @@
 
 ```sh
 npm run check
+npm run demo:check
 npm run eval:smoke
 # 按需执行全部固定样本
 npm run eval:full
 ```
 
 执行器 CLI 自带隔离演示服务，不要求启动工作台。成功返回 0；样本不符、浏览器缺失或进程异常返回非零。浏览器下载受限时可用已安装的 Chrome：给 API/CLI 设置 `REPROLENS_EVAL_CHANNEL=chrome`，使用独立上下文而非个人浏览器资料。
+
+`demo:check` 与评测 CLI 是不同入口：它复用产品的运行管理器，对三种内置故障执行缺陷/修复双版本闭环；使用系统 Chrome 时设置 `REPROLENS_BROWSER_CHANNEL=chrome`。报告写入临时目录，终端会打印路径。
 
 产品专项验证先构建并启动 API，再执行：
 ```sh

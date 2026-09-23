@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { requireBrowser } from "./browser-readiness.js";
 import type { Response } from "express";
 import { config } from "./config.js";
 import { DeepSeekProvider } from "./provider.js";
@@ -32,6 +33,7 @@ export class RunManager {
       input = { ...input, plan: parsed.data };
     }
     if (input.baselineRunId) await this.validateBaseline(input);
+    await requireBrowser();
     const now = new Date().toISOString();
     const run: ReproRun = {
       id: randomUUID(),

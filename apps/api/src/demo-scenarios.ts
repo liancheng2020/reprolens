@@ -4,6 +4,14 @@ import { fixtureHtml } from "./evaluation/fixtures.js";
 
 export interface DemoScenario extends Omit<CreateRunInput, "url"> { id: string; title: string; path: string }
 export const demoScenarios: DemoScenario[] = [
+  { id: "cart", title: "业务：加入购物车后数量不变", path: "/demo/shop?fixed=0", devices: ["desktop"],
+    issue: "点击加入购物车后数量仍为零。", expected: "从空购物车加入一件商品后，数量应为 1。",
+    plan: { version: 1, objective: "验证购物车从 0 变为 1", scope: "仅验证本地演示购物车的首次添加，不涉及真实订单、支付或库存。", warnings: ["固定演示计划，未调用模型；页面每次加载从空购物车开始。"], steps: [
+      { title: "确认商品页面", action: "assert", phase: "setup", assertion: "visible", target: { by: "role", role: "button", value: "加入购物车" }, allowSideEffect: false },
+      { title: "确认购物车为空", action: "assert", phase: "setup", assertion: "text", target: { by: "css", value: "#cart-count" }, value: "0", allowSideEffect: false },
+      { title: "添加演示商品", action: "click", phase: "setup", target: { by: "role", role: "button", value: "加入购物车" }, allowSideEffect: true },
+      { title: "核对购物车数量", action: "assert", phase: "check", assertion: "text", target: { by: "css", value: "#cart-count" }, value: "1", allowSideEffect: false }
+    ] } },
   { id: "modal", title: "UI：手机弹窗按钮被遮挡", path: "/demo/modal?fixed=0", devices: ["desktop", "iphone13"],
     issue: "手机上打开编辑资料弹窗后，底部工具栏遮住确定按钮；桌面端正常。", expected: "弹窗确定按钮完整位于视口内，中心无遮挡，点击后显示资料已更新。",
     plan: { version: 1, objective: "检查不同视口下弹窗按钮遮挡与确认反馈", scope: "仅检查确定按钮的视口边界、中心命中与确认反馈；不评价整体视觉设计。", warnings: ["内置固定演示计划，未调用模型生成；请核对步骤后确认执行。"], steps: [

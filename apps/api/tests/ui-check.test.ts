@@ -30,7 +30,7 @@ describe("UI target geometry and hit testing", () => {
     expect(observe({ width: 0 }).clear).toBe(false);
   });
   it("shares the exact fixed probe with generated tests", () => {
-    const demo = demoScenarios[0];
+    const demo = demoScenarios.find(item => item.id === "modal")!;
     expect(reproPlanSchema.safeParse(demo.plan).success).toBe(true);
     const code = generateBusinessTest({ ...demo, url: "http://127.0.0.1/demo/modal", planConfirmed: true });
     expect(code).toContain(uiProbe.toString());

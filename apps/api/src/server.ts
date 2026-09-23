@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { BrowserUnavailableError, checkBrowser, requireBrowser } from "./browser-readiness.js";
 import path from "node:path";
 import cors from "cors";
 import express from "express";
@@ -60,6 +61,7 @@ app.use("/api/evaluations", evaluationRouter());
 app.use("/demo/eval", fixtureRouter());
 app.use("/demo", demoRouter());
 app.get("/api/demos", (_request, response) => response.json(demoScenarios));
+app.get("/api/browser", async (_request, response) => response.json(await checkBrowser()));
 
 app.get("/health", (_request, response) => {
   response.json({
@@ -124,6 +126,7 @@ app.post("/api/plans", async (request, response, next) => {
     }
     let observation;
     if (parsed.data.observePage) {
+      await requireBrowser();
       try { observation = await observePage(parsed.data.url, parsed.data.devices[0]!); }
       catch { response.status(422).json({ error: "页面观察失败：请检查站点授权配置、网络及浏览器依赖。未调用模型；也可关闭观察后生成建议计划。" }); return; }
     }
@@ -212,6 +215,10 @@ if (fs.existsSync(webDist)) {
 }
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+  if (error instanceof BrowserUnavailableError) {
+    response.status(503).json({ code: "BROWSER_UNAVAILABLE", error: error.message });
+    return;
+  }
   if (error instanceof RunInputError) {
     response.status(422).json({ error: error.message });
     return;

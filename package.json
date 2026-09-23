@@ -7,6 +7,7 @@
     "apps/*"
   ],
   "scripts": {
+    "demo:check": "npm exec --workspace @reprolens/api -- tsx src/demo-check.ts",
     "eval:model": "npm run eval:model --workspace @reprolens/api --",
     "eval:smoke": "npm run eval --workspace @reprolens/api -- smoke",
     "eval:full": "npm run eval --workspace @reprolens/api -- full",

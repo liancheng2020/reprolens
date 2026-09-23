@@ -160,6 +160,15 @@ function Dashboard({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [demos, setDemos] = useState<DemoScenario[]>([]);
+  const [browser, setBrowser] = useState<{ ready: boolean; message: string }>();
+  const [checkingBrowser, setCheckingBrowser] = useState(false);
+  const refreshBrowser = async () => {
+    setCheckingBrowser(true);
+    try { setBrowser(await api.browser()); }
+    catch { setBrowser({ ready: false, message: "无法检查浏览器，请确认 API 服务正常后重试。" }); }
+    finally { setCheckingBrowser(false); }
+  };
+  useEffect(() => { void refreshBrowser(); }, []);
   const [usingDemo, setUsingDemo] = useState(false);
   const [observeBeforePlan, setObserveBeforePlan] = useState(false);
   useEffect(() => { void api.demos().then(setDemos).catch(() => setDemos([])); }, []);
@@ -236,11 +245,20 @@ function Dashboard({
         </section>
 
         {!!demos.length && <section className="repro-demos" aria-label="复现示例"><strong>示例</strong>{demos.map(demo => <button key={demo.id} className="secondary-button" disabled={submitting} onClick={() => loadDemo(demo)}>{demo.id === "modal" ? <Smartphone size={16} /> : <SquareTerminal size={16} />}{demo.title}</button>)}</section>}
+        <details className="repro-github">
+          <summary>支持范围与执行前提</summary>
+          <p className="plan-help">适用于已授权测试页面的短流程：点击、输入、刷新，以及文本、状态、请求和有限遮挡检查，最多 15 步。需要明确定位、预期值和测试数据；手机为视口模拟，不是真机。</p>
+          <p className="plan-help">不自动处理登录验证码、拖拽、上传或探索未知业务。模型失败返回的模板必须手动编辑；固定示例不证明模型规划能力。执行受阻属于证据不足，不代表发现产品 Bug。</p>
+        </details>
 
         <details className="repro-github"><summary>从 GitHub Issue 导入</summary><GitHubImport config={config} onImported={onCreated} /></details>
 
         <section className="workspace-grid">
           <form className="run-form panel" onSubmit={submit}>
+            {(!browser?.ready || checkingBrowser) && <div className="plan-warning" role="status">
+              <p>{checkingBrowser || !browser ? "正在检查复现浏览器…" : browser.message}</p>
+              <button type="button" className="secondary-button" disabled={checkingBrowser} onClick={() => void refreshBrowser()}><RefreshCw size={14} />重新检查</button>
+            </div>}
             <div className="panel-heading">
               <div><span className="section-kicker">NEW RUN</span><h3>创建复现任务</h3></div>
             </div>
@@ -274,7 +292,7 @@ function Dashboard({
             {plan && <label className="plan-consent"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /><span>我已核对目标页面、定位方式、测试数据和核心检查项；所有未覆盖的期望已在范围中明确排除。</span></label>}
             {plan && <button type="button" className="secondary-button regenerate-plan" disabled={submitting} onClick={() => { setPlan(undefined); setConfirmed(false); }}><RefreshCw size={14} aria-hidden="true" />重新生成计划</button>}
             {error && <div className="form-error"><AlertTriangle size={15} /> {error}</div>}
-            <button className="primary-button" disabled={submitting || Boolean(plan && !confirmed)}>
+            <button className="primary-button" disabled={submitting || Boolean(plan && !confirmed) || ((Boolean(plan) || observeBeforePlan) && (!browser?.ready || checkingBrowser))}>
               {submitting ? <LoaderCircle className="spin" size={18} /> : <Play size={18} fill="currentColor" />}
               {submitting ? (plan ? "正在创建任务" : "正在生成复现计划") : plan ? "按确认计划执行" : "生成复现计划"}
               {!submitting && <ChevronRight size={17} />}
