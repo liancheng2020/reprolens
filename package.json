@@ -7,6 +7,7 @@
     "apps/*"
   ],
   "scripts": {
+    "verify:workflow": "node scripts/verify-workflow.mjs",
     "demo:check": "npm exec --workspace @reprolens/api -- tsx src/demo-check.ts",
     "eval:model": "npm run eval:model --workspace @reprolens/api --",
     "eval:smoke": "npm run eval --workspace @reprolens/api -- smoke",

@@ -19,7 +19,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 export const api = {
   browser: () => request<{ ready: boolean; message: string }>("/api/browser"),
   demos: () => request<DemoScenario[]>("/api/demos"),
-  createPlan: (input: CreateRunInput & { observePage?: boolean }) => request<ReproPlan>("/api/plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }),
+  createPlan: (input: CreateRunInput & { observePage?: boolean }) => request<ReproPlan & { planningId?: string }>("/api/plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }),
   replanRun: (id: string, input: CreateRunInput) => request<ReproRun>(`/api/runs/${id}/replan`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }),
   config: () => request<AppConfig>("/api/config"),
   runs: () => request<ReproRun[]>("/api/runs"),

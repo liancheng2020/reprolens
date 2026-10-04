@@ -16,7 +16,7 @@ export function generateBusinessTest(input: CreateRunInput, targetFromEnv = fals
     'import { test, expect } from "playwright/test";',
     'import type { Request, Response } from "playwright";',
     "",
-    "// 此文件由已确认计划生成，尚未自动重跑验证。故障版应失败，修复版应通过。",
+    "// 此文件由已确认计划生成，验证状态以独立测试报告为准。故障版应失败，修复版应通过。",
     "// 仅在已授权测试环境运行。与运行时一致：唯一定位、键盘输入、失焦检查、有限超时。",
     "test.setTimeout(120_000);"
   ];

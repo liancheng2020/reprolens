@@ -23,6 +23,7 @@ await new Promise<void>((resolve, reject) => { server.once("listening", resolve)
 const address = server.address();
 assert(address && typeof address !== "string");
 const origin = `http://127.0.0.1:${address.port}`;
+config.port = address.port;
 const store = new RunStore();
 await store.init();
 const manager = new RunManager(store);
@@ -38,7 +39,7 @@ async function complete(id: string): Promise<ReproRun> {
 try {
   const results = [];
   for (const demo of demoScenarios) {
-    const input = { ...demo, url: origin + demo.path, planConfirmed: true, qualityScan: false };
+    const input = { ...demo, demoId: demo.id, url: origin + demo.path, planConfirmed: true, qualityScan: false };
     const bug = await complete((await manager.create(input)).id);
     assert.equal(bug.verdict, "reproduced", demo.id);
     assert(bug.business?.steps.some(step => step.phase === "check" && step.status === "failed"));
@@ -48,7 +49,12 @@ try {
     assert.equal(fixed.verdict, "not_reproduced", demo.id);
     assert.equal(fixed.verification?.business?.status, "fixed", demo.id);
     assert(fixed.business?.steps.every(step => step.status === "passed"));
-    results.push({ scenario: demo.id, devices: demo.devices, bug: bug.verdict, fixed: fixed.verdict, verification: fixed.verification?.business?.status });
+    assert.equal(bug.planning?.source, "demo");
+    assert.equal(bug.provider, "deterministic");
+    assert.equal(fixed.planning?.id, bug.planning?.id);
+    assert.equal(fixed.regression?.status, "verified", JSON.stringify(fixed.regression));
+    assert.equal(fixed.generatedTest, bug.generatedTest);
+    results.push({ scenario: demo.id, devices: demo.devices, bug: bug.verdict, fixed: fixed.verdict, verification: fixed.verification?.business?.status, regression: fixed.regression });
     console.log(`PASS ${demo.id}: reproduced -> fixed`);
   }
   const report = { date: new Date().toISOString(), modelCalls: 0, results, artifacts: root };

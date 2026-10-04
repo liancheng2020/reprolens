@@ -7,7 +7,6 @@ import { businessReport, executePlan, reportVerdict } from "./business.js";
 import { generateBusinessTest } from "./business-test.js";
 import type { BusinessReport, StepEvidence } from "./types.js";
 import { config } from "./config.js";
-import { DeepSeekProvider } from "./provider.js";
 import type {
   AuditSnapshot,
   AxeViolation,
@@ -216,8 +215,6 @@ async function auditPage(
 }
 
 export class BrowserScanner {
-  constructor(private readonly provider: DeepSeekProvider) {}
-
   async scan(runId: string, input: CreateRunInput, callbacks: ScannerCallbacks): Promise<ScanResult> {
     const startedAt = Date.now();
     const findings: Finding[] = [];
@@ -316,8 +313,8 @@ export class BrowserScanner {
       verdict,
       business,
       summary: `${label}。核心检查覆盖 ${business.covered}/${business.total}。${failure ? failure.title + "：" + failure.actual : input.plan.scope}。页面质量问题不参与业务结论。`,
-      generatedTest: generateBusinessTest(input),
-      provider: this.provider.configured ? "deepseek" : "deterministic",
+      generatedTest: generateBusinessTest(input, true),
+      provider: "deterministic",
       durationMs: Date.now() - startedAt,
       consoleErrors: consoleErrorCount,
       networkErrors: networkErrorCount,

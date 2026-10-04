@@ -1,12 +1,23 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config.js";
-import type { ReproRun } from "./types.js";
+import type { PlanningRecord, ReproRun } from "./types.js";
 
 export class RunStore {
   async init(): Promise<void> {
     await fs.mkdir(config.dataDir, { recursive: true });
     await fs.mkdir(config.artifactsDir, { recursive: true });
+    await fs.mkdir(path.join(config.dataDir, "plans"), { recursive: true });
+  }
+
+  async savePlan(record: PlanningRecord): Promise<void> {
+    await fs.writeFile(path.join(config.dataDir, "plans", `${record.id}.json`), JSON.stringify(record, null, 2), "utf8");
+  }
+
+  async getPlan(id: string): Promise<PlanningRecord | undefined> {
+    if (!/^[a-f0-9-]+$/i.test(id)) return undefined;
+    try { return JSON.parse(await fs.readFile(path.join(config.dataDir, "plans", `${id}.json`), "utf8")) as PlanningRecord; }
+    catch { return undefined; }
   }
 
   async save(run: ReproRun): Promise<void> {

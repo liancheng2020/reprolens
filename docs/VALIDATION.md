@@ -4,6 +4,13 @@
 
 ## 最近验证结果
 
+截至 2026-10-05 的本轮验证：
+- `npm run check`：66 条单元测试及前后端构建通过。新增规划来源、实际调用 Trace、记录持久化、编辑追踪和导出测试失败位置判定测试；模型调用使用测试桩，没有产生真实模型费用。
+- `REPROLENS_BROWSER_CHANNEL=chrome npm run demo:check`：购物车、移动弹窗遮挡、失焦丢值三组内置示例均在缺陷版复现、修复版通过。每组还运行同一份导出文件验证两版；移动弹窗同时核对桌面通过与手机目标断言失败，保存 SHA-256 与两份真实 Playwright 报告。
+- 本轮双版本产物：临时目录 `reprolens-demo-check-bp6hja`。首轮临时目录依赖解析失败被判为验证未通过；修正后上述三组全部通过，没有将进程失败当作缺陷检出。
+- `REPROLENS_TEST_URL=http://127.0.0.1:8797 REPROLENS_BROWSER_CHANNEL=chrome npm run verify:workflow`：通过真实工作台完成失焦示例、修复与导出测试验证，检查规划来源继承、刷新后记录保留、关键步骤截图及 1440×1000 / 390×844 布局；无页面脚本异常和横向溢出。
+- 浏览器检查产物：`artifacts/workflow-qa-1791129662624/`。这轮验证不代表模型规划成功率或真实客户网站覆盖率；没有调用真实模型，也没有发布 GitHub 报告。
+
 截至 2026-09-23 的本地记录：
 - `npm run check` 通过：56 条单元测试、API TypeScript 构建和 Web 构建。
 - `REPROLENS_BROWSER_CHANNEL=chrome npm run demo:check` 使用本机 Chrome 和隔离的演示服务，分别验证购物车数量、手机弹窗遮挡、输入失焦丢值三条真实浏览器流程。每条均在缺陷版判定为 `reproduced`，在修复版判定为 `not_reproduced`，并检查核心业务验证状态、步骤与截图。

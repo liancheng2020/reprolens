@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
+import { planningForRun } from "./planning.js";
+import { canVerifyDemoRegression, verifyDemoRegression } from "./regression.js";
 import { requireBrowser } from "./browser-readiness.js";
 import type { Response } from "express";
-import { config } from "./config.js";
 import { DeepSeekProvider } from "./provider.js";
 import { businessReport } from "./business.js";
 import { reproPlanSchema } from "./repro-plan.js";
@@ -17,7 +19,7 @@ export class RunInputError extends Error {}
 export class RunManager {
   private readonly subscribers = new Map<string, Set<Response>>();
   private readonly provider = new DeepSeekProvider();
-  private readonly scanner = new BrowserScanner(this.provider);
+  private readonly scanner = new BrowserScanner();
   private readonly visualDiff = new VisualDiffService();
 
   constructor(private readonly store: RunStore) {}
@@ -32,7 +34,14 @@ export class RunManager {
       if (!parsed.success) throw new RunInputError(parsed.error.issues.map((issue) => issue.message).join("；"));
       input = { ...input, plan: parsed.data };
     }
-    if (input.baselineRunId) await this.validateBaseline(input);
+    const baseline = input.baselineRunId ? await this.validateBaseline(input) : undefined;
+    let planning;
+    try {
+      planning = baseline?.planning ? { ...baseline.planning,
+        edited: Boolean(baseline.planning.candidate && !isDeepStrictEqual(baseline.planning.candidate, input.plan)),
+        confirmedAt: input.planConfirmed ? new Date().toISOString() : undefined }
+        : planningForRun(input, input.planningId ? await this.store.getPlan(input.planningId) : undefined);
+    } catch (error) { throw new RunInputError(error instanceof Error ? error.message : "规划记录无效"); }
     await requireBrowser();
     const now = new Date().toISOString();
     const run: ReproRun = {
@@ -41,8 +50,9 @@ export class RunManager {
       status: "queued",
       currentStep: "等待执行",
       input,
-      provider: this.provider.configured ? "deepseek" : "deterministic",
-      model: this.provider.configured ? config.deepseekModel : undefined,
+      planning,
+      provider: planning.source === "model" ? "deepseek" : "deterministic",
+      model: planning.source === "model" ? planning.trace?.model : undefined,
       timeline: [],
       business: businessReport(input, []),
       findings: [],
@@ -62,12 +72,13 @@ export class RunManager {
     return run;
   }
 
-  private async validateBaseline(input: CreateRunInput): Promise<void> {
+  private async validateBaseline(input: CreateRunInput): Promise<ReproRun> {
     const baseline = await this.store.get(input.baselineRunId!);
     if (!baseline) throw new RunInputError("基线任务不存在");
     if (baseline.status !== "completed") throw new RunInputError("只能验证已完成的基线任务");
     const missingDevice = input.devices.find((device) => !baseline.screenshots.some((item) => item.device === device));
     if (missingDevice) throw new RunInputError(`基线缺少 ${missingDevice} 截图`);
+    return baseline;
   }
 
   async subscribe(id: string, response: Response): Promise<boolean> {
@@ -161,7 +172,6 @@ export class RunManager {
       run.confidence = result.confidence;
       run.summary = result.summary;
       run.generatedTest = result.generatedTest;
-      run.provider = result.provider;
       run.metrics = {
         durationMs: result.durationMs,
         consoleErrors: result.consoleErrors,
@@ -197,6 +207,16 @@ export class RunManager {
           run.verification.business!.summary,
           run.verification.business!.status === "fixed" ? "success" : "warning"
         );
+        if (canVerifyDemoRegression(baseline, run)) {
+          run.generatedTest = baseline.generatedTest;
+          await this.push(run, "step", "重跑同一份导出测试", "内置缺陷版与修复版；不调用模型", "running");
+          try { run.regression = await verifyDemoRegression(baseline, run); }
+          catch (error) {
+            run.regression = { status: "error", baselineRunId: baseline.id, testSha256: "", testUrl: "", results: [],
+              summary: error instanceof Error ? error.message : "导出测试验证失败" };
+          }
+          await this.push(run, "step", "导出测试验证完成", run.regression.summary, run.regression.status === "verified" ? "success" : "warning");
+        }
       }
 
       run.status = "completed";

@@ -5,13 +5,23 @@ export const verdictLabels = { reproduced: "已复现", not_reproduced: "此路�
 const actions = { click: "点击", input: "键盘输入并验证", assert: "检查结果", reload: "刷新页面" };
 const assertions = { value: "输入值相等", text: "文本相等", visible: "可见", hidden: "隐藏 / 消失", enabled: "可用", editable: "可编辑", url: "URL 相等", response: "关联请求", unobscured: "视口内且中心无遮挡" };
 const states = { passed: "通过", failed: "失败", blocked: "受阻", skipped: "跳过" };
+export function formatStepActual(actual: string): string {
+  try {
+    const value = JSON.parse(actual);
+    if (!value || typeof value !== "object") return actual;
+    if (typeof value.centerClear === "boolean") return `${value.inViewport ? "目标位于视口内" : "目标超出视口"}；${value.centerClear ? "中心无遮挡" : "中心被遮挡"}`;
+    if (typeof value.value === "string") return `输入值：${value.value ? JSON.stringify(value.value) : "空"}${value.disabled ? "；控件已禁用" : ""}${value.readonly ? "；控件只读" : ""}`;
+    if (typeof value.text === "string" && value.text) return `页面文本：${value.text}`;
+  } catch { /* Plain-text execution errors are already readable. */ }
+  return actual;
+}
 const emptyStep = (): ReproStep => ({ title: "新的检查项", action: "assert", phase: "check", assertion: "visible", target: { by: "label", value: "" }, allowSideEffect: false });
 
 export function PlanEditor({ plan, onChange }: { plan: ReproPlan; onChange: (plan: ReproPlan) => void }) {
   const update = (index: number, change: Partial<ReproStep>) => onChange({ ...plan, steps: plan.steps.map((s, i) => i === index ? { ...s, ...change } : s) });
   const target = (index: number, change: Partial<ReproTarget>) => update(index, { target: { by: "label", value: "", ...plan.steps[index].target, ...change } });
   return <section className="plan-editor">
-    <div className="panel-heading"><div><span className="section-kicker">REPRODUCTION PLAN · v0.5</span><h3>确认要测的场景与结果</h3></div></div>
+    <div className="panel-heading"><div><span className="section-kicker">REPRODUCTION PLAN</span><h3>确认要测的场景与结果</h3></div></div>
     <label><span>复现目标</span><textarea rows={2} value={plan.objective} onChange={e => onChange({ ...plan, objective: e.target.value })} /></label>
     <label><span>验收范围（不在此范围内的结果不会被证明）</span><textarea rows={2} value={plan.scope} onChange={e => onChange({ ...plan, scope: e.target.value })} /></label>
     {plan.warnings.length > 0 && <p className="plan-warning">{plan.warnings.join(" ")}</p>}
@@ -54,26 +64,27 @@ export function PlanEditor({ plan, onChange }: { plan: ReproPlan; onChange: (pla
 }
 
 export function BusinessEvidence({ report }: { report?: BusinessReport }) {
-  if (!report) return <section className="business-panel panel"><h3>旧版质量扫描记录</h3><p>此记录没有 v0.5 业务断言，不能据此证明目标 Bug。请重新生成复现计划。</p></section>;
-  const critical = report.steps.filter(step => step.status === "failed" || step.status === "blocked");
-  const remaining = report.steps.filter(step => step.status !== "failed" && step.status !== "blocked");
+  if (!report) return <section className="business-panel panel"><h3>旧版质量扫描记录</h3><p>此记录没有业务断言，不能据此证明目标 Bug。请重新生成复现计划。</p></section>;
+  const failures = report.steps.filter(step => step.status === "failed" || step.status === "blocked");
+  const critical = failures.length ? failures : report.steps.filter(step => step.phase === "check" && step.status !== "skipped");
+  const remaining = report.steps.filter(step => !critical.includes(step));
   return <section className="business-panel panel">
-    <div className="panel-heading"><div><span className="section-kicker">BUSINESS EVIDENCE</span><h3>目标问题 · 步骤证据</h3></div><span>核心覆盖 {report.covered}/{report.total}</span></div>
+    <div className="panel-heading"><div><span className="section-kicker">BUSINESS EVIDENCE</span><h3>关键步骤 · 预期与实际</h3></div><span>核心覆盖 {report.covered}/{report.total}</span></div>
     <div className="business-devices">{report.devices.map(item => <span className={"business-badge " + item.verdict} key={item.device}>{item.device} · {verdictLabels[item.verdict]}</span>)}</div>
     {!report.steps.length && <p>尚无业务步骤证据。未确认计划的任务不会自动探索页面。</p>}
-    {critical.map(step => <EvidenceStep key={step.device + step.index} step={step} />)}
+    {critical.map(step => <EvidenceStep key={step.device + step.index} step={step} expanded />)}
     {!!remaining.length && <details className="quality-disclosure"><summary>其他步骤 · {remaining.length} 项</summary>{remaining.map(step => <EvidenceStep key={step.device + step.index} step={step} />)}</details>}
     <p className="plan-help">复现结论只来自已确认的核心检查。执行受阻不等于产品 Bug；附加质量问题不参与判定。</p>
   </section>;
 }
 
-function EvidenceStep({ step }: { step: StepEvidence }) {
-  return <details className={"business-step " + step.status} open={step.status === "failed" || step.status === "blocked"}>
+function EvidenceStep({ step, expanded = false }: { step: StepEvidence; expanded?: boolean }) {
+  return <details className={"business-step " + step.status} open={expanded}>
       <summary><span>{step.device} · {step.index + 1}. {step.title}</span><b>{states[step.status]}</b></summary>
-      <dl><dt>作用</dt><dd>{step.phase === "check" ? "核心检查" : "前置准备"}</dd><dt>期望</dt><dd>{step.expected}</dd><dt>实际</dt><dd>{step.actual}</dd>
+      <dl><dt>作用</dt><dd>{step.phase === "check" ? "核心检查" : "前置准备"}</dd><dt>期望</dt><dd>{step.expected}</dd><dt>实际</dt><dd>{formatStepActual(step.actual)}</dd>
         {step.target && <><dt>目标</dt><dd>{step.target.by} · {step.target.value}</dd></>}
-        {step.detail && <><dt>说明</dt><dd><pre>{step.detail}</pre></dd></>}
       </dl>
       <div className="business-shots">{[["操作前", step.beforeUrl], ["操作后", step.afterUrl]].map(([label, url]) => url && <a key={label} href={url} target="_blank" rel="noreferrer"><span>{label}</span><img src={url} alt={label + "证据"} loading="lazy" /></a>)}</div>
+      {step.detail && <details className="plan-record"><summary>执行详情</summary><pre>{step.detail}</pre></details>}
     </details>;
 }

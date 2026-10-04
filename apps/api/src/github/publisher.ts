@@ -64,7 +64,7 @@ ${findings}
 
 - 截图：${run.screenshots.length} 张
 - 视觉对比：${run.verification?.comparisons.length ?? 0} 组 Before / After / Diff
-- Playwright 回归测试：${run.business?.testStatus === "generated" ? "已生成，尚未自动重跑验证" : "草稿 / 尚未验证"}
+- Playwright 回归测试：${run.regression?.status === "verified" ? "导出测试已通过内置双版本验证" : run.regression ? "已重跑，但未通过双版本验证" : run.business?.testStatus === "generated" ? "已生成，尚未自动重跑验证" : "草稿 / 尚未验证"}
 
 > 完整截图、Diff、JSON 与测试文件请从对应 GitHub Actions 运行的 Artifacts 下载。
 

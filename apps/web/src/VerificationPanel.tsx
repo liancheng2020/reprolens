@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { ArrowRight, GitCompare, Image, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
+import { ArrowRight, Image, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
 import type { DeviceName, ReproRun } from "./types";
+import { formatStepActual } from "./Business";
 
 const deviceLabels: Record<DeviceName, string> = {
   desktop: "Desktop",
@@ -69,7 +70,7 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
           {fix.steps.filter(step => step.phase === "check").map(step => <details className="fix-step" key={step.device + step.index} open={step.baseline?.status === "failed" || step.current?.status !== "passed"}>
             <summary>{deviceLabels[step.device]} · {step.index + 1}. {step.title}：{step.baseline ? stepLabels[step.baseline.status] : "缺失"} → {step.current ? stepLabels[step.current.status] : "缺失"}</summary>
             <div className="fix-evidence">{([["修复前", step.baseline], ["修复后", step.current]] as const).map(([label, evidence]) => <div key={label}>
-              <strong>{label}</strong><p>期望：{evidence?.expected ?? "未记录"}</p><p>实际：{evidence?.actual ?? "未执行或证据缺失"}</p>
+              <strong>{label}</strong><p>期望：{evidence?.expected ?? "未记录"}</p><p>实际：{evidence ? formatStepActual(evidence.actual) : "未执行或证据缺失"}</p>
               {evidence?.afterUrl && <a href={evidence.afterUrl} target="_blank" rel="noreferrer">查看步骤截图</a>}
             </div>)}</div>
           </details>)}
@@ -95,9 +96,7 @@ export function VerificationPanel({ run, activeDevice, onVerify }: Props) {
             ))}
           </div>
         </details>
-      ) : (
-        <div className="verification-empty"><GitCompare size={34} /><span>{verification ? "未生成辅助像素对比；业务结论见上方" : "尚未执行修复对比"}</span></div>
-      )}
+      ) : verification ? <p className="plan-help">未生成辅助像素对比；业务结论见上方。</p> : null}
 
       {run.status === "completed" && <form className="verification-form" onSubmit={submit}>
         <label>

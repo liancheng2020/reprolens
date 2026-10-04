@@ -10,12 +10,13 @@ ReproLens 面向前端、测试和开源维护者，将问题描述转成可确�
 React 工作台：URL / 问题 / 预期 / 设备
   -> POST /api/plans
   -> 可选初始页面观察 -> DeepSeek 候选计划 -> Zod 校验
+  -> 保存服务端规划记录并返回 planningId
   -> 用户编辑与确认
   -> POST /api/runs -> RunManager -> Playwright 顺序执行
   -> 步骤证据 / 截图 / 执行事件 -> JSON Store + SSE -> 结果页
   -> POST /api/runs/:id/verify -> 基线计划重放
   -> 同标准核对 + 步骤前后比较 -> verification.business
-  -> 回归测试 / 可选 GitHub 报告
+  -> 回归测试 -> 内置双版本导出测试验证 / 可选 GitHub 报告
 ```
 
 ## 模块职责
@@ -26,11 +27,13 @@ React 工作台：URL / 问题 / 预期 / 设备
 | --- | --- |
 | `repro-plan.ts` | Zod 契约、计划字段与步骤约束、规划提示 |
 | `provider.ts` | DeepSeek 调用、JSON/计划校验、错误分类与模板降级 |
+| `planning.ts` / `store.ts` | 服务端候选计划、来源与调用记录；关联最终确认计划，不按 Key 是否配置推断模型贡献 |
 | `page-observation.ts` | 授权 origin 下提取有限初始页面元素元数据 |
 | `run-manager.ts` / `store.ts` | queued/running/completed/failed 状态、证据落盘与 SSE |
 | `scanner.ts` | 各设备隔离浏览器上下文、执行调度、截图和运行错误采集 |
 | `business.ts` / `ui-check.ts` | 定位、动作、业务断言、有限 UI 探针 |
 | `business-test.ts` | 根据已确认计划确定性生成 Playwright 测试 |
+| `regression.ts` | 限定内置双版本，独立 Playwright 进程重跑同一文件、核对原失败断言和全部设备结果 |
 | `business-verification.ts` | 核对检查标准，关联步骤证据，防止误报修复 |
 | `verification.ts` / `visual-diff.ts` | 组织验证结果，保留辅助质量比较与像素 Diff |
 | `analyzer.ts` / `quality.ts` | 附加发现、质量指标、门禁与趋势，不代替业务结论 |
@@ -59,7 +62,9 @@ React 工作台：URL / 问题 / 预期 / 设备
 
 模型调用超时为 25 秒，自动重试关闭。未配置、非法 JSON、非法计划、超时或请求失败返回带原因的待编辑模板，不算模型成功。模型提出的副作用授权统一重置为 false。
 
-详细规划调用包含模型、Prompt 版本、实际 token、耗时和校验错误；缺失用量为 null。合成模型对照可保存原始输出，普通规划不会将原文落盘，也不能宣称每个运行已经完整关联所有模型 Trace。
+规划记录位于 `data/runs/plans/{planningId}.json`，包含候选计划、输入问题、观察元数据、模型、Prompt 版本、实际 token、耗时和校验错误；缺失用量为 null。创建运行时从服务端读取记录，拒绝不存在或问题不一致的 ID；在运行中保存快照、确认时间和编辑标记。最终计划保存在 `run.input.plan`。固定示例与人工计划不会因配置了 Key 而标为模型生成。
+
+合成模型对照可保存原始输出；普通规划不保存原始模型文本。候选计划和观察名称可能包含用户提供的信息，默认只保存在本机，不应提交这些数据到 Git。旧运行不追溯补造规划记录。
 
 ## 修复验证
 
@@ -68,6 +73,12 @@ React 工作台：URL / 问题 / 预期 / 设备
 基线须确有核心失败，本次所有步骤须通过，才给出范围内修复通过。缓存的 covered/total 不代替逐项证据；标准改变、缺步骤、执行受阻或基线未复现不能判修复成功。完整状态表见 [使用说明](USAGE.md#复现与修复)。
 
 旧 `verification.status` 是辅助质量/视觉结果。像素 Diff 失败只产生警告，不覆盖业务判定；旧记录不会被追溯包装为已验证业务修复。完整计划比较偏保守，文案变更也可能导致不可比较。
+
+## 导出测试验证
+
+普通页面保持“已生成、尚未验证”。内置示例需原始计划、原始设备、当前本机 API origin 与准确双版本 URL，基线确有核心失败且业务修复通过，才自动验证。服务端重新生成并核对基线导出代码，拒绝修改后的文件；同一文件用 `REPROLENS_TARGET_URL` 分别指向两版，单 Worker、零重试，每版进程最多 60 秒，不传递模型或 GitHub 密钥。
+
+按设备核对报告：缺陷版必须在原失败步骤的核心断言行失败，其余设备通过；修复版全部通过。浏览器启动、导航、其他步骤失败、测试缺失、超时或无有效报告不能算检出。SHA-256、同一测试文件、两份 JSON 报告和 manifest 保存在 `artifacts/{runId}/regression/`。验证错误不覆盖独立的业务修复结论。
 
 ## 存储与协作
 

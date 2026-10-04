@@ -68,6 +68,8 @@ export interface GitHubRunSource {
 }
 
 export interface CreateRunInput {
+  planningId?: string;
+  demoId?: string;
   plan?: ReproPlan;
   planConfirmed?: boolean;
   url: string;
@@ -193,6 +195,8 @@ export interface BusinessVerification {
 }
 
 export interface ReproRun {
+  planning?: import("../../api/src/types").PlanningRecord & { confirmedAt?: string; edited: boolean };
+  regression?: import("../../api/src/types").RegressionReport;
   business?: BusinessReport;
   id: string;
   createdAt: string;

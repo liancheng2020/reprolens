@@ -70,6 +70,8 @@ export interface GitHubRunSource {
 }
 
 export interface CreateRunInput {
+  planningId?: string;
+  demoId?: string;
   plan?: ReproPlan;
   planConfirmed?: boolean;
   url: string;
@@ -211,6 +213,8 @@ export interface RunMetrics {
 }
 
 export interface ReproRun {
+  planning?: PlanningRecord & { confirmedAt?: string; edited: boolean };
+  regression?: RegressionReport;
   business?: BusinessReport;
   id: string;
   createdAt: string;
@@ -233,6 +237,26 @@ export interface ReproRun {
   quality?: QualityReport;
   source?: GitHubRunSource;
   error?: string;
+}
+
+export interface PlanningRecord {
+  id: string;
+  createdAt: string;
+  source: "model" | "template" | "demo" | "manual";
+  request: { url: string; issue: string; expected: string };
+  candidate?: ReproPlan;
+  observation?: import("./page-observation.js").PageObservation;
+  trace?: import("./provider.js").PlanningTrace;
+  demoId?: string;
+}
+
+export interface RegressionReport {
+  status: "verified" | "failed" | "error";
+  baselineRunId: string;
+  testSha256: string;
+  testUrl: string;
+  results: Array<{ version: "bug" | "fixed"; passed: boolean; reportUrl: string; detail: string }>;
+  summary: string;
 }
 
 export interface InteractiveElement {

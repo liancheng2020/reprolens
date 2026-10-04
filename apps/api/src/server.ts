@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { randomUUID } from "node:crypto";
 import { BrowserUnavailableError, checkBrowser, requireBrowser } from "./browser-readiness.js";
 import path from "node:path";
 import cors from "cors";
@@ -20,6 +21,8 @@ import { observePage } from "./page-observation.js";
 
 const deviceSchema = z.enum(["desktop", "iphone13", "pixel7"]);
 const createRunSchema = z.object({
+  planningId: z.string().uuid().optional(),
+  demoId: z.enum(["cart", "modal", "profile"]).optional(),
   url: z.string().trim().url().refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "仅支持 HTTP/HTTPS 地址"),
   issue: z.string().trim().min(8, "请描述需要复现的问题").max(3000),
   expected: z.string().trim().min(4, "请填写期望结果").max(2000),
@@ -130,7 +133,12 @@ app.post("/api/plans", async (request, response, next) => {
       try { observation = await observePage(parsed.data.url, parsed.data.devices[0]!); }
       catch { response.status(422).json({ error: "页面观察失败：请检查站点授权配置、网络及浏览器依赖。未调用模型；也可关闭观察后生成建议计划。" }); return; }
     }
-    response.json(await new DeepSeekProvider().createPlan(parsed.data, observation));
+    const { plan, trace } = await new DeepSeekProvider().createPlanDetailed(parsed.data, observation);
+    const planningId = randomUUID();
+    await store.savePlan({ id: planningId, createdAt: new Date().toISOString(),
+      source: trace.status === "model" ? "model" : "template", candidate: plan, trace, observation,
+      request: { url: parsed.data.url, issue: parsed.data.issue, expected: parsed.data.expected } });
+    response.json({ ...plan, planningId });
   } catch (error) { next(error); }
 });
 
@@ -152,6 +160,7 @@ app.post("/api/runs/:id/verify", async (request, response, next) => {
     }
     const run = await manager.create({
       ...baseline.input,
+      planningId: undefined,
       url: parsed.data.url ?? baseline.input.url,
       baselineRunId: baseline.id
     });

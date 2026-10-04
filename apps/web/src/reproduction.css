@@ -23,7 +23,20 @@
 .bug-context h3{margin:0 0 16px;font-size:18px}
 .bug-context dl{display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px 16px;margin:0;font-size:14px;line-height:1.7}
 .bug-context dt{color:#aebac4}.bug-context dd{margin:0;overflow-wrap:anywhere}
+.run-provenance{padding:24px;min-width:0}.run-provenance h3{font-size:18px;margin:0 0 16px}
+.run-provenance dl{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;font-size:13px;line-height:1.7;margin:0}
+.run-provenance dt{color:#aebac4}.run-provenance dd{margin:0;overflow-wrap:anywhere}
+.plan-record{margin-top:16px}.plan-record summary,.run-support>summary{cursor:pointer;font-size:13px;color:#acb9c0;padding:12px 0}
+.plan-record-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;border-top:1px solid #2d373b}
+.plan-record-grid>div{min-width:0}.plan-record-grid p,.plan-record-grid li{font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.plan-record-grid small{display:block;color:#aebac4}.plan-record-grid pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}
+.regression-status{padding:20px 24px;border-bottom:1px solid #2d373b;font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.regression-status p{color:#aebac4;margin:8px 0}.regression-status a{color:#85f7c8}.code-panel>.plan-record{padding:0 24px 24px}
+@media(max-width:680px){.plan-record-grid{grid-template-columns:minmax(0,1fr)}.run-provenance{padding:18px}.run-provenance dl{grid-template-columns:1fr;gap:6px}.run-provenance dd{margin-bottom:8px}}
 .result-deliverable{min-width:0}.result-deliverable .code-panel{width:100%;min-width:0}
+.run-content{grid-template-columns:minmax(0,1fr)}.run-support{min-width:0}
+.result-deliverable .code-panel{height:auto;display:block}
+.code-panel .regression-status code{display:inline;padding:0;white-space:normal;overflow-wrap:anywhere;font-size:11px}
 .run-overview>.secondary-button{white-space:normal}
 .fix-result{border-left:3px solid #e4bd70;padding:4px 16px;margin:18px 0;min-width:0;overflow-wrap:anywhere}
 .fix-result.fixed{border-color:#85f7c8}.fix-result.still_reproduced,.fix-result.regressed{border-color:#ef8798}

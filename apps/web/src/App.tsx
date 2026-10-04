@@ -37,7 +37,8 @@ import { GitHubImport } from "./GitHubImport";
 import { GitHubSourceCard } from "./GitHubSourceCard";
 import type { AppConfig, CreateRunInput, DeviceName, Finding, QualityTrendPoint, ReproRun, WebVitals } from "./types";
 import { VerificationPanel } from "./VerificationPanel";
-import { BusinessEvidence, PlanEditor, verdictLabels } from "./Business";
+import { RegressionStatus, RunProvenance } from "./RunProvenance";
+import { BusinessEvidence, formatStepActual, PlanEditor, verdictLabels } from "./Business";
 import type { ReproPlan } from "./types";
 import type { DemoScenario } from "../../api/src/demo-scenarios";
 import "./reproduction.css";
@@ -176,7 +177,7 @@ function Dashboard({
   const loadDemo = (demo: DemoScenario) => {
     setUsingDemo(true);
     const { id: _id, title: _title, path, ...request } = demo;
-    setInput({ ...request, url: new URL(path, config?.demoUrl ?? window.location.origin).href, plan: undefined, planConfirmed: false });
+    setInput({ ...request, demoId: demo.id, url: new URL(path, config?.demoUrl ?? window.location.origin).href, plan: undefined, planConfirmed: false });
     setPlan(structuredClone(demo.plan)); setConfirmed(false); setError("");
   };
 
@@ -186,7 +187,7 @@ function Dashboard({
 
   // Editing the original request invalidates its confirmed plan; remounting a retry does not.
   const changeRequest = (change: Partial<CreateRunInput>) => {
-    setInput(current => ({ ...current, ...change })); setPlan(undefined); setConfirmed(false);
+    setInput(current => ({ ...current, ...change, planningId: undefined, demoId: undefined })); setPlan(undefined); setConfirmed(false); setUsingDemo(false);
   };
 
   const toggleDevice = (device: DeviceName) => {
@@ -209,7 +210,9 @@ function Dashboard({
     setSubmitting(true);
     try {
       if (!plan) {
-        setPlan(await api.createPlan({ ...input, observePage: observeBeforePlan }));
+        const { planningId, ...candidate } = await api.createPlan({ ...input, observePage: observeBeforePlan });
+        setPlan(candidate);
+        setInput(current => ({ ...current, planningId, demoId: undefined }));
         setConfirmed(false);
       } else {
         if (!confirmed) { setError("请核对并确认复现计划"); return; }
@@ -230,10 +233,10 @@ function Dashboard({
 
   return (
     <>
-      <Topbar title="Bug 复现工作台" subtitle="UI 与交互问题 · 复现证据 · 修复验证" config={config} />
+      <Topbar title="缺陷复现与修复验证" subtitle="Web 交互问题 · 步骤证据 · 同标准修复验证" config={config} />
       <div className="content">
         <section className="repro-intro">
-          <div><span className="section-kicker">REPROLENS</span><h2>复现 Web UI 与交互问题</h2></div>
+          <div><span className="section-kicker">REPROLENS</span><h2>把交互问题变成可重放的证据</h2></div>
           <ol><li>描述问题</li><li>确认步骤</li><li>查看证据</li><li>验证修复</li></ol>
         </section>
 
@@ -290,7 +293,7 @@ function Dashboard({
             {!plan && <label className="plan-consent"><input type="checkbox" disabled={submitting} checked={observeBeforePlan} onChange={e => setObserveBeforePlan(e.target.checked)} /><span>允许访问已授权站点，并将初始页面元素名称发送给模型（首个所选设备，不含输入值）。</span></label>}
             {plan && <PlanEditor plan={plan} onChange={(next) => { setPlan(next); setConfirmed(false); }} />}
             {plan && <label className="plan-consent"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /><span>我已核对目标页面、定位方式、测试数据和核心检查项；所有未覆盖的期望已在范围中明确排除。</span></label>}
-            {plan && <button type="button" className="secondary-button regenerate-plan" disabled={submitting} onClick={() => { setPlan(undefined); setConfirmed(false); }}><RefreshCw size={14} aria-hidden="true" />重新生成计划</button>}
+            {plan && <button type="button" className="secondary-button regenerate-plan" disabled={submitting} onClick={() => { setPlan(undefined); setConfirmed(false); setInput(current => ({ ...current, planningId: undefined, demoId: undefined })); }}><RefreshCw size={14} aria-hidden="true" />重新生成计划</button>}
             {error && <div className="form-error"><AlertTriangle size={15} /> {error}</div>}
             <button className="primary-button" disabled={submitting || Boolean(plan && !confirmed) || ((Boolean(plan) || observeBeforePlan) && (!browser?.ready || checkingBrowser))}>
               {submitting ? <LoaderCircle className="spin" size={18} /> : <Play size={18} fill="currentColor" />}
@@ -471,6 +474,9 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
   const runtimeFindings = run.findings.filter(item => item.category === "console" || item.category === "network");
   const qualityFindings = run.findings.filter(item => item.category !== "console" && item.category !== "network");
   const hasQuality = Boolean(run.quality || qualityFindings.length);
+  const focalEvidence = run.business?.steps.find(step => step.phase === "check" && step.status === "failed")
+    ?? run.business?.steps.find(step => step.status === "blocked");
+  const headline = run.error ?? (focalEvidence ? `${deviceLabels[focalEvidence.device]} · ${focalEvidence.title}：${formatStepActual(focalEvidence.actual)}` : run.summary ?? run.input.issue);
 
   useEffect(() => {
     if (!run.screenshots.some((item) => item.device === activeDevice) && run.screenshots[0]) setActiveDevice(run.screenshots[0].device);
@@ -501,11 +507,11 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
             <div className={`verdict-icon ${run.verdict ?? "running"}`}>
               {isRunning ? <LoaderCircle className="spin" size={25} /> : run.verdict === "not_reproduced" && run.status !== "failed" ? <CheckCircle2 size={25} /> : <AlertTriangle size={25} />}
             </div>
-            <div><span className="section-kicker">{isRunning ? "AGENT IS WORKING" : "BUSINESS VERIFICATION"}</span><h2>{isRunning ? run.currentStep : run.status === "failed" ? "执行失败" : run.business ? verdictLabels[run.verdict ?? "inconclusive"] : "旧版页面质量扫描"}</h2><p>{run.error ?? run.summary ?? run.input.issue}</p></div>
+            <div><span className="section-kicker">{isRunning ? "RUNNING" : "BUSINESS VERIFICATION"}</span><h2>{isRunning ? run.currentStep : run.status === "failed" ? "执行失败" : run.business ? verdictLabels[run.verdict ?? "inconclusive"] : "旧版页面质量扫描"}</h2><p>{headline}</p></div>
           </div>
           <div className="overview-meta">
             <div><span>核心覆盖</span><strong>{run.business ? `${run.business.covered}/${run.business.total}` : "旧版"}</strong></div>
-            <div><span>耗时</span><strong>{formatDuration(run.metrics.durationMs)}</strong></div>
+            <div><span>复现耗时</span><strong>{formatDuration(run.metrics.durationMs)}</strong></div>
             <div><span>执行器</span><strong>Playwright</strong></div>
           </div>
           {!isRunning && <button className="secondary-button" onClick={onReplan}>编辑计划并重新复现</button>}
@@ -517,12 +523,13 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
           {!isRunning && <p className="plan-help">{run.status === "failed" ? "执行未完成，不能判断目标 Bug。检查上述错误与时间线后重新运行。" : run.verdict === "inconclusive" ? "证据不足不等于没有 Bug。请查看受阻步骤，确认页面可访问、前置条件和控件定位，再编辑计划重试。" : run.verdict === "not_reproduced" ? "仅代表已执行的路径与设备未复现，不代表页面不存在其他问题。" : "核心检查与预期不符；请结合下方实际值和步骤截图核查。"}</p>}
         </section>
 
-        <GitHubSourceCard run={run} canPublish={Boolean(config?.github.configured)} onPublish={onPublish} />
-
         <BusinessEvidence report={run.business} />
 
         <VerificationPanel key={run.id} run={run} activeDevice={activeDevice} onVerify={onVerify} />
 
+        <RunProvenance run={run} />
+
+        <details className="run-support" open={isRunning ? true : undefined}><summary>完整截图与执行时间线</summary>
         <section className="inspect-grid">
           <div className="browser-panel panel">
             <div className="browser-toolbar">
@@ -559,7 +566,7 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
           </div>
 
           <div className="timeline-panel panel">
-            <div className="panel-heading"><div><span className="section-kicker">LIVE TRACE</span><h3>Agent 时间线</h3></div><span className="event-count">{run.timeline.length} events</span></div>
+            <div className="panel-heading"><div><span className="section-kicker">LIVE TRACE</span><h3>执行时间线</h3></div><span className="event-count">{run.timeline.length} events</span></div>
             <div className="timeline">
               {run.timeline.map((item, index) => (
                 <div className={`timeline-item ${item.state}`} key={item.id}>
@@ -571,23 +578,26 @@ function RunDetail({ run, config, onBack, onRefresh, onVerify, onPublish, onRepl
             </div>
           </div>
         </section>
+        </details>
 
-        <section className={runtimeFindings.length ? "result-grid" : "result-deliverable"}>
-          {!!runtimeFindings.length && <div className="findings-panel panel">
+        {!!runtimeFindings.length && <details className="run-support"><summary>辅助运行错误 · {runtimeFindings.length} 项</summary><div className="findings-panel panel">
             <div className="panel-heading"><div><span className="section-kicker">RUNTIME EVIDENCE</span><h3>运行期间的错误</h3></div><span className="finding-count">{runtimeFindings.length}</span></div>
             <p className="plan-help">辅助排查线索，尚不能证明与目标 Bug 存在因果关系。</p>
             <div className="finding-list">{runtimeFindings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div>
-          </div>}
+          </div></details>}
 
+        <section className="result-deliverable">
           <div className="code-panel panel">
+            <RegressionStatus run={run} />
             <div className="panel-heading"><div><span className="section-kicker">DELIVERABLE</span><h3>回归测试</h3></div>{run.generatedTest && <button className="copy-button" onClick={copyCode}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "已复制" : "复制"}</button>}</div>
             {run.generatedTest ? (
-              <><p className="plan-help">{run.business?.testStatus === "generated" ? "已按计划生成，尚未自动重跑验证" : "测试草稿 / 旧版测试，尚不能证明目标问题"}。故障版应失败，修复版应通过。</p><pre><code>{run.generatedTest}</code></pre></>
+              <details className="plan-record"><summary>查看导出测试代码</summary><pre><code>{run.generatedTest}</code></pre></details>
             ) : (
               <div className="code-placeholder"><FileCode2 size={28} /><strong>等待测试生成</strong><span>完成复现后，Agent 将交付可执行的 Playwright 测试。</span></div>
             )}
           </div>
         </section>
+        {run.source && <details className="run-support"><summary>GitHub 协作</summary><GitHubSourceCard run={run} canPublish={Boolean(config?.github.configured)} onPublish={onPublish} /></details>}
 
         {hasQuality && <details className="quality-disclosure panel"><summary>附加页面质量 · 不参与目标 Bug 判定</summary><QualityPanel run={run} activeDevice={activeDevice} /><div className="finding-list">{qualityFindings.map(finding => <FindingCard key={finding.id} finding={finding} />)}</div></details>}
         <section className="metrics-strip panel">
