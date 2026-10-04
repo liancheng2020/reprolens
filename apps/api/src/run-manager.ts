@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { planningForRun } from "./planning.js";
 import { canVerifyDemoRegression, verifyDemoRegression } from "./regression.js";
 import { requireBrowser } from "./browser-readiness.js";
+import { targetUrlSchema } from "./input-validation.js";
 import type { Response } from "express";
 import { DeepSeekProvider } from "./provider.js";
 import { businessReport } from "./business.js";
@@ -29,6 +30,8 @@ export class RunManager {
   }
 
   async create(input: CreateRunInput, source?: GitHubRunSource): Promise<ReproRun> {
+    if (!targetUrlSchema.safeParse(input.url).success) throw new RunInputError("仅支持不含账号密码的 HTTP/HTTPS 地址");
+    if (!input.devices.length || new Set(input.devices).size !== input.devices.length) throw new RunInputError("设备不能为空或重复");
     if (input.plan) {
       const parsed = reproPlanSchema.safeParse(input.plan);
       if (!parsed.success) throw new RunInputError(parsed.error.issues.map((issue) => issue.message).join("；"));
@@ -76,8 +79,6 @@ export class RunManager {
     const baseline = await this.store.get(input.baselineRunId!);
     if (!baseline) throw new RunInputError("基线任务不存在");
     if (baseline.status !== "completed") throw new RunInputError("只能验证已完成的基线任务");
-    const missingDevice = input.devices.find((device) => !baseline.screenshots.some((item) => item.device === device));
-    if (missingDevice) throw new RunInputError(`基线缺少 ${missingDevice} 截图`);
     return baseline;
   }
 
@@ -141,9 +142,8 @@ export class RunManager {
     const run = await this.store.get(id);
     if (!run) return;
     run.status = "running";
-    await this.push(run, "status", "任务开始", "正在准备浏览器环境", "running");
-
     try {
+      await this.push(run, "status", "任务开始", "正在准备浏览器环境", "running");
       const result = await this.scanner.scan(run.id, run.input, {
         evidence: async (item) => {
           run.business = businessReport(run.input, [...(run.business?.steps ?? []), item]);

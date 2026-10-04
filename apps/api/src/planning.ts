@@ -11,6 +11,10 @@ export function planningForRun(input: CreateRunInput, stored?: PlanningRecord) {
   }
   const demo = demoScenarios.find(item => item.id === input.demoId);
   if (input.demoId && !demo) throw new Error("内置示例不存在");
+  if (demo && (input.issue !== demo.issue || input.expected !== demo.expected
+    || new URL(input.url).pathname !== new URL(demo.path, input.url).pathname)) {
+    throw new Error("示例描述或目标已改变，请清除示例来源后使用人工计划");
+  }
   const record: PlanningRecord = stored ?? {
     id: randomUUID(), createdAt: new Date().toISOString(), request,
     source: demo ? "demo" : "manual", demoId: demo?.id,

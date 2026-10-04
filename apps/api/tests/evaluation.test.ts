@@ -25,6 +25,9 @@ describe("evaluation dataset", () => {
     const code = generateBusinessTest(input, true);
     expect(code).toContain("process.env.REPROLENS_TARGET_URL");
     expect(code).toContain('.press("Tab")');
+    expect(code).toContain('serviceWorkers: "block"');
+    expect(code).toContain('new URL(targetUrl).origin');
+    expect(code).toContain('route.request().isNavigationRequest()');
     expect(code.match(/toHaveValue/g)).toHaveLength(2);
   });
 });

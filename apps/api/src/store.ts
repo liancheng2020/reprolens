@@ -11,7 +11,9 @@ export class RunStore {
   }
 
   async savePlan(record: PlanningRecord): Promise<void> {
-    await fs.writeFile(path.join(config.dataDir, "plans", `${record.id}.json`), JSON.stringify(record, null, 2), "utf8");
+    const target = path.join(config.dataDir, "plans", `${record.id}.json`);
+    await fs.writeFile(`${target}.tmp`, JSON.stringify(record, null, 2), "utf8");
+    await fs.rename(`${target}.tmp`, target);
   }
 
   async getPlan(id: string): Promise<PlanningRecord | undefined> {
@@ -43,5 +45,22 @@ export class RunStore {
     return runs
       .filter((run): run is ReproRun => Boolean(run))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async recoverInterrupted(): Promise<number> {
+    const interrupted = (await this.list()).filter(run => run.status === "queued" || run.status === "running");
+    for (const run of interrupted) {
+      run.status = "failed";
+      run.completedAt = new Date().toISOString();
+      run.currentStep = "执行已中断";
+      run.error = "服务重启导致任务中断，未自动重放操作。请检查已有证据后重新确认执行。";
+      run.verdict = "inconclusive";
+      if (run.verification?.business) {
+        run.verification.business.status = "inconclusive";
+        run.verification.business.summary = run.error;
+      }
+      await this.save(run);
+    }
+    return interrupted.length;
   }
 }

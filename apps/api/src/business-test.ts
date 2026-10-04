@@ -18,13 +18,17 @@ export function generateBusinessTest(input: CreateRunInput, targetFromEnv = fals
     "",
     "// 此文件由已确认计划生成，验证状态以独立测试报告为准。故障版应失败，修复版应通过。",
     "// 仅在已授权测试环境运行。与运行时一致：唯一定位、键盘输入、失焦检查、有限超时。",
+    'test.use({ serviceWorkers: "block", acceptDownloads: false });',
     "test.setTimeout(120_000);"
   ];
   for (const device of input.devices) {
     lines.push("", "test(" + JSON.stringify(device + " · " + input.plan.objective) + ", async ({ page }) => {",
       "  await page.setViewportSize(" + JSON.stringify(viewports[device]) + ");",
-      "  await page.goto(" + (targetFromEnv ? "process.env.REPROLENS_TARGET_URL ?? " : "") + JSON.stringify(input.url) + ', { waitUntil: "domcontentloaded" });',
-      "  const origin = new URL(page.url()).origin;",
+      "  const targetUrl = " + (targetFromEnv ? "process.env.REPROLENS_TARGET_URL ?? " : "") + JSON.stringify(input.url) + ";",
+      "  const origin = new URL(targetUrl).origin;",
+      '  await page.route("**/*", route => route.request().isNavigationRequest() && new URL(route.request().url()).origin !== origin ? route.abort() : route.continue());',
+      '  await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 25000 });',
+      "  expect(new URL(page.url()).origin).toBe(origin);",
       "  let epoch = 0;",
       "  const requestEpoch = new WeakMap<Request, number>();",
       "  const responses: Array<{ response: Response; epoch: number | undefined }> = [];",

@@ -18,15 +18,16 @@ import { evaluationRouter } from "./evaluation/routes.js";
 import { fixtureRouter } from "./evaluation/fixtures.js";
 import { demoRouter, demoScenarios } from "./demo-scenarios.js";
 import { observePage } from "./page-observation.js";
+import { targetUrlSchema } from "./input-validation.js";
 
 const deviceSchema = z.enum(["desktop", "iphone13", "pixel7"]);
 const createRunSchema = z.object({
   planningId: z.string().uuid().optional(),
   demoId: z.enum(["cart", "modal", "profile"]).optional(),
-  url: z.string().trim().url().refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "仅支持 HTTP/HTTPS 地址"),
+  url: targetUrlSchema,
   issue: z.string().trim().min(8, "请描述需要复现的问题").max(3000),
   expected: z.string().trim().min(4, "请填写期望结果").max(2000),
-  devices: z.array(deviceSchema).min(1).max(3),
+  devices: z.array(deviceSchema).min(1).max(3).refine(devices => new Set(devices).size === devices.length, "设备不能重复"),
   baselineRunId: z.string().uuid().optional(),
   plan: reproPlanSchema.optional(),
   planConfirmed: z.boolean().optional(),
@@ -41,11 +42,12 @@ const createRunSchema = z.object({
 });
 
 const verifyRunSchema = z.object({
-  url: z.string().trim().url().refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "仅支持 HTTP/HTTPS 地址").optional()
+  url: targetUrlSchema.optional()
 });
 
 const store = new RunStore();
 await store.init();
+await store.recoverInterrupted();
 const manager = new RunManager(store);
 const github = new GitHubService(store, manager);
 const app = express();
@@ -224,6 +226,14 @@ if (fs.existsSync(webDist)) {
 }
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+  if (error && typeof error === "object" && "type" in error && error.type === "entity.parse.failed") {
+    response.status(400).json({ error: "请求 JSON 格式不正确" });
+    return;
+  }
+  if (error && typeof error === "object" && "type" in error && error.type === "entity.too.large") {
+    response.status(413).json({ error: "请求内容超过 256KB 限制，请缩短描述或计划" });
+    return;
+  }
   if (error instanceof BrowserUnavailableError) {
     response.status(503).json({ code: "BROWSER_UNAVAILABLE", error: error.message });
     return;

@@ -12,6 +12,13 @@ const errors = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   page.on("pageerror", error => errors.push(error.message));
+  const demos = await (await page.request.get(`${origin}/api/demos`)).json();
+  const sample = { ...demos[2], url: `${origin}${demos[2].path}`, planConfirmed: true };
+  assert.equal((await page.request.post(`${origin}/api/runs`, { data: { ...sample, devices: ["desktop", "desktop"] } })).status(), 422);
+  assert.equal((await page.request.post(`${origin}/api/runs`, { data: { ...sample, url: "http://user:password@localhost/test" } })).status(), 422);
+  assert.equal((await page.request.post(`${origin}/api/runs`, { data: { ...sample, url: "not-a-url" } })).status(), 422);
+  assert.equal((await page.request.post(`${origin}/api/runs`, { data: "{invalid", headers: { "Content-Type": "application/json" } })).status(), 400);
+  assert.equal((await page.request.post(`${origin}/api/runs`, { data: " ".repeat(270000), headers: { "Content-Type": "application/json" } })).status(), 413);
   await page.goto(origin);
   await page.getByRole("heading", { name: "缺陷复现与修复验证", exact: true }).waitFor();
   await page.getByRole("button", { name: "交互：输入失焦后内容丢失", exact: true }).click();
@@ -57,6 +64,6 @@ try {
   await page.locator(".run-row").first().click();
   await page.getByText("导出测试已验证", { exact: true }).waitFor();
   assert.deepEqual(errors, []);
-  await fs.writeFile(path.join(dir, "report.json"), JSON.stringify({ modelCalls: 0, bugRunId: bug.id, fixedRunId: fixed.id, regression: fixed.regression, errors }, null, 2));
+  await fs.writeFile(path.join(dir, "report.json"), JSON.stringify({ modelCalls: 0, apiValidation: ["duplicate-devices", "credential-url", "invalid-url", "malformed-json", "oversized-body"], bugRunId: bug.id, fixedRunId: fixed.id, regression: fixed.regression, errors }, null, 2));
   console.log(`PASS: provenance, key evidence, fix replay, exported-test validation, persistence and responsive layout. ${dir}`);
 } finally { await browser.close(); }

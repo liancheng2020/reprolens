@@ -1,0 +1,876 @@
+{
+  "id": "c5be9979-cf2c-4245-b167-3a83d2c7d5c2",
+  "version": 1,
+  "datasetVersion": "1",
+  "suite": "full",
+  "mode": "deterministic-executor",
+  "status": "completed",
+  "startedAt": "2026-10-04T16:37:19.421Z",
+  "total": 20,
+  "results": [
+    {
+      "id": "blur-bug",
+      "title": "输入失焦后值丢失",
+      "expected": "reproduced",
+      "actual": "reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "failed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toHaveValue(expected) failed\n\nLocator:  getByLabel('显示名称', { exact: true })\nExpected: \"repro-test\"\nReceived: \"\"\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.have.value\" with timeout 4000ms\n  - waiting for getByLabel('显示名称', { exact: true })\n    12 × locator resolved to <input id=\"name\" autocomplete=\"off\"/>\n       - unexpected value \"\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 5209
+    },
+    {
+      "id": "blur-fixed",
+      "title": "输入失焦后值丢失",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "passed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/blur-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 1077
+    },
+    {
+      "id": "disabled-bug",
+      "title": "输入框意外禁用",
+      "expected": "reproduced",
+      "actual": "reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "failed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":true,\"readonly\":false,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toBeEnabled() failed\n\nLocator:  getByLabel('显示名称', { exact: true })\nExpected: enabled\nReceived: disabled\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.enabled\" with timeout 4000ms\n  - waiting for getByLabel('显示名称', { exact: true })\n    12 × locator resolved to <input disabled id=\"name\" autocomplete=\"off\"/>\n       - unexpected value \"disabled\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 4351
+    },
+    {
+      "id": "disabled-fixed",
+      "title": "输入框意外禁用",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "passed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/disabled-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 1061
+    },
+    {
+      "id": "readonly-bug",
+      "title": "输入框意外只读",
+      "expected": "reproduced",
+      "actual": "reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "failed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toBeEditable() failed\n\nLocator:  getByLabel('显示名称', { exact: true })\nExpected: editable\nReceived: readOnly\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.editable\" with timeout 4000ms\n  - waiting for getByLabel('显示名称', { exact: true })\n    12 × locator resolved to <input readonly id=\"name\" autocomplete=\"off\"/>\n       - unexpected value \"readOnly\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 4297
+    },
+    {
+      "id": "readonly-fixed",
+      "title": "输入框意外只读",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "passed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/readonly-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 990
+    },
+    {
+      "id": "missing-bug",
+      "title": "成功提示未出现",
+      "expected": "reproduced",
+      "actual": "reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "failed",
+          "expected": "visible: true",
+          "actual": "等待超时：目标未出现或仍不可见",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toBeVisible() failed\n\nLocator:  locator('#result')\nExpected: visible\nReceived: hidden\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 4000ms\n  - waiting for locator('#result')\n    12 × locator resolved to <div hidden=\"\" id=\"result\" role=\"status\">保存成功</div>\n       - unexpected value \"hidden\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 4327
+    },
+    {
+      "id": "missing-fixed",
+      "title": "成功提示未出现",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"DIV\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"保存成功\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/missing-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 306
+    },
+    {
+      "id": "text-bug",
+      "title": "业务文案不正确",
+      "expected": "reproduced",
+      "actual": "reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "failed",
+          "expected": "text: 保存成功",
+          "actual": "{\"tag\":\"DIV\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"保存失败\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#result')\nExpected: \"保存成功\"\nReceived: \"保存失败\"\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.have.text\" with timeout 4000ms\n  - waiting for locator('#result')\n    12 × locator resolved to <div id=\"result\" role=\"status\">保存失败</div>\n       - unexpected value \"保存失败\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 4394
+    },
+    {
+      "id": "text-fixed",
+      "title": "业务文案不正确",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "passed",
+          "expected": "text: 保存成功",
+          "actual": "{\"tag\":\"DIV\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"保存成功\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/text-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 326
+    },
+    {
+      "id": "hidden-bug",
+      "title": "加载遮罩未消失",
+      "expected": "reproduced",
+      "actual": "reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "failed",
+          "expected": "hidden: true",
+          "actual": "{\"tag\":\"DIV\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"保存成功\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toBeHidden() failed\n\nLocator:  locator('#result')\nExpected: hidden\nReceived: visible\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.hidden\" with timeout 4000ms\n  - waiting for locator('#result')\n    12 × locator resolved to <div id=\"result\" role=\"status\">保存成功</div>\n       - unexpected value \"visible\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 4322
+    },
+    {
+      "id": "hidden-fixed",
+      "title": "加载遮罩未消失",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "passed",
+          "expected": "hidden: true",
+          "actual": "目标已隐藏或消失",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/hidden-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 315
+    },
+    {
+      "id": "delayed-bug",
+      "title": "延迟出现的成功提示",
+      "expected": "reproduced",
+      "actual": "reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "failed",
+          "expected": "visible: true",
+          "actual": "等待超时：目标未出现或仍不可见",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toBeVisible() failed\n\nLocator:  locator('#result')\nExpected: visible\nReceived: hidden\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 4000ms\n  - waiting for locator('#result')\n    12 × locator resolved to <div hidden=\"\" id=\"result\" role=\"status\">保存成功</div>\n       - unexpected value \"hidden\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 4278
+    },
+    {
+      "id": "delayed-fixed",
+      "title": "延迟出现的成功提示",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"DIV\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"保存成功\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/delayed-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 1006
+    },
+    {
+      "id": "ambiguous-bug",
+      "title": "同名输入框定位歧义",
+      "expected": "inconclusive",
+      "actual": "inconclusive",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "blocked",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "原目标已消失或不再唯一；当前页面：/demo/eval/ambiguous",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-bug/desktop-step-1-before.png",
+          "detail": "expect(locator).toHaveCount(expected) failed\n\nLocator:  getByLabel('显示名称', { exact: true })\nExpected: 1\nReceived: 2\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.have.count\" with timeout 4000ms\n  - waiting for getByLabel('显示名称', { exact: true })\n    12 × locator resolved to 2 elements\n       - unexpected value \"2\"\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-bug/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 4326
+    },
+    {
+      "id": "ambiguous-fixed",
+      "title": "同名输入框定位歧义",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "passed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/ambiguous-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 1000
+    },
+    {
+      "id": "danger-bug",
+      "title": "未授权的删除动作",
+      "expected": "inconclusive",
+      "actual": "inconclusive",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-bug/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "操作测试按钮",
+          "phase": "setup",
+          "target": {
+            "by": "css",
+            "value": "#action"
+          },
+          "status": "blocked",
+          "expected": "完成已确认的点击动作",
+          "actual": "{\"tag\":\"BUTTON\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"删除账户\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-bug/desktop-step-1-before.png",
+          "detail": "此步骤可能修改业务数据，请在测试环境中明确授权后执行",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-bug/desktop-step-1-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 2,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "skipped",
+          "expected": "text: 保存成功",
+          "actual": "前置步骤未完成或核心检查失败，未继续执行"
+        }
+      ],
+      "durationMs": 270
+    },
+    {
+      "id": "danger-fixed",
+      "title": "未授权的删除动作",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "操作测试按钮",
+          "phase": "setup",
+          "target": {
+            "by": "css",
+            "value": "#action"
+          },
+          "status": "passed",
+          "expected": "完成已确认的点击动作",
+          "actual": "{\"tag\":\"BUTTON\",\"disabled\":false,\"readonly\":false,\"focused\":true,\"text\":\"保存草稿\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-fixed/desktop-step-1-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 2,
+          "title": "核对业务结果",
+          "phase": "check",
+          "target": {
+            "by": "css",
+            "value": "#result"
+          },
+          "status": "passed",
+          "expected": "text: 保存成功",
+          "actual": "{\"tag\":\"DIV\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"保存成功\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-fixed/desktop-step-2-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/danger-fixed/desktop-step-2-after.png"
+        }
+      ],
+      "durationMs": 425
+    },
+    {
+      "id": "setup-bug",
+      "title": "目标页面前置条件缺失",
+      "expected": "inconclusive",
+      "actual": "inconclusive",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "blocked",
+          "expected": "visible: true",
+          "actual": "原目标已消失或不再唯一；当前页面：/demo/eval/setup",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/setup-bug/desktop-step-0-before.png",
+          "detail": "expect(locator).toBeVisible() failed\n\nLocator: getByText('个人资料', { exact: true })\nExpected: visible\nTimeout: 4000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 4000ms\n  - waiting for getByText('个人资料', { exact: true })\n",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/setup-bug/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "skipped",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "前置步骤未完成或核心检查失败，未继续执行"
+        }
+      ],
+      "durationMs": 4201
+    },
+    {
+      "id": "setup-fixed",
+      "title": "目标页面前置条件缺失",
+      "expected": "not_reproduced",
+      "actual": "not_reproduced",
+      "passed": true,
+      "steps": [
+        {
+          "device": "desktop",
+          "index": 0,
+          "title": "确认目标表单场景",
+          "phase": "setup",
+          "target": {
+            "by": "text",
+            "value": "个人资料"
+          },
+          "status": "passed",
+          "expected": "visible: true",
+          "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"个人资料\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/setup-fixed/desktop-step-0-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/setup-fixed/desktop-step-0-after.png"
+        },
+        {
+          "device": "desktop",
+          "index": 1,
+          "title": "输入后失焦仍保留测试值",
+          "phase": "check",
+          "target": {
+            "by": "label",
+            "value": "显示名称"
+          },
+          "status": "passed",
+          "expected": "输入并失焦后值等于 \"repro-test\"",
+          "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+          "beforeUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/setup-fixed/desktop-step-1-before.png",
+          "afterUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2/setup-fixed/desktop-step-1-after.png"
+        }
+      ],
+      "durationMs": 969
+    }
+  ],
+  "replay": [
+    {
+      "fixed": false,
+      "expected": "failed",
+      "actual": "failed",
+      "passed": true
+    },
+    {
+      "fixed": true,
+      "expected": "passed",
+      "actual": "passed",
+      "passed": true
+    }
+  ],
+  "artifactsUrl": "/artifacts/eval-c5be9979-cf2c-4245-b167-3a83d2c7d5c2",
+  "passed": true,
+  "finishedAt": "2026-10-04T16:38:15.191Z",
+  "metrics": {
+    "casePassRate": 1,
+    "verdictAccuracy": 1,
+    "falsePositiveRate": 0,
+    "inconclusiveRate": 0.15,
+    "errors": 0,
+    "averageDurationMs": 2373,
+    "modelCalls": 0,
+    "tokenUsage": null,
+    "cost": null
+  }
+}

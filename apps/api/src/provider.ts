@@ -9,6 +9,21 @@ export interface PlanningTrace {
   model: string; promptVersion: string; status: "model" | "fallback";
   errorCode?: string; durationMs: number; inputTokens: number | null; outputTokens: number | null;
   finishReason?: string; validationErrors?: string[]; modelOutput?: string;
+  httpStatus?: number;
+}
+
+export function modelErrorCode(error: unknown): string {
+  if (error instanceof SyntaxError) return "INVALID_JSON";
+  if (error instanceof Error && error.name === "ZodError") return "INVALID_PLAN";
+  if (error instanceof Error && /timeout/i.test(error.name)) return "MODEL_TIMEOUT";
+  const status = error && typeof error === "object" && "status" in error ? error.status : undefined;
+  if (status === 401 || status === 403) return "MODEL_AUTH_FAILED";
+  if (status === 402) return "MODEL_QUOTA_EXHAUSTED";
+  if (status === 400) return "MODEL_REQUEST_INVALID";
+  if (status === 404) return "MODEL_NOT_FOUND";
+  if (status === 429) return "MODEL_RATE_LIMITED";
+  if (typeof status === "number" && status >= 500) return "MODEL_SERVICE_UNAVAILABLE";
+  return "MODEL_REQUEST_FAILED";
 }
 
 function parseJson(content: string): unknown {
@@ -46,6 +61,8 @@ export class DeepSeekProvider {
       trace.outputTokens = response.usage?.completion_tokens ?? null;
       trace.finishReason = response.choices[0]?.finish_reason;
       if (captureSyntheticOutput) trace.modelOutput = response.choices[0]?.message?.content ?? "";
+      if (trace.finishReason === "length") return fallback("OUTPUT_TRUNCATED");
+      if (response.choices[0]?.message?.refusal) return fallback("MODEL_REFUSAL");
       const plan = reproPlanSchema.parse(parseJson(response.choices[0]?.message?.content ?? "{}"));
       trace.status = "model"; trace.durationMs = Date.now() - started;
       const warning = observation
@@ -53,11 +70,11 @@ export class DeepSeekProvider {
         : "定位方式由模型建议，尚未访问页面。请核对目标、范围和测试数据后执行。";
       return { plan: { ...plan, warnings: [warning, ...plan.warnings].slice(0, 10), steps: plan.steps.map(step => ({ ...step, allowSideEffect: false })) }, trace };
     } catch (error) {
+      if (error && typeof error === "object" && "status" in error && typeof error.status === "number") trace.httpStatus = error.status;
       if (error instanceof Error && error.name === "ZodError") {
         trace.validationErrors = (error as Error & { issues: Array<{ path: unknown[]; message: string }> }).issues.map(i => `${i.path.join(".")}: ${i.message}`).slice(0, 10);
       }
-      return fallback(error instanceof SyntaxError ? "INVALID_JSON" : error instanceof Error && error.name === "ZodError" ? "INVALID_PLAN"
-        : error instanceof Error && /timeout/i.test(error.name) ? "MODEL_TIMEOUT" : "MODEL_REQUEST_FAILED");
+      return fallback(modelErrorCode(error));
     }
   }
 }

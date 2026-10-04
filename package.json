@@ -7,6 +7,7 @@
     "apps/*"
   ],
   "scripts": {
+    "eval:interview": "npm run build --workspace @reprolens/api && node apps/api/dist/evaluation/interview-cli.js",
     "verify:workflow": "node scripts/verify-workflow.mjs",
     "demo:check": "npm exec --workspace @reprolens/api -- tsx src/demo-check.ts",
     "eval:model": "npm run eval:model --workspace @reprolens/api --",

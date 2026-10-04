@@ -39,7 +39,8 @@ async function replay(dir: string, origin: string, fixed: boolean, failureLine: 
   const exitCode = await new Promise<number | null>(resolve => {
     execFile(process.execPath, [playwrightCli, "test", "--config", path.join(dir, "playwright.config.ts")], {
       cwd: projectRoot, timeout: 45_000, maxBuffer: 2 * 1024 * 1024,
-      env: { ...process.env, REPROLENS_TARGET_URL: `${origin}/demo/eval/blur?fixed=${fixed ? 1 : 0}`, PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath }
+      env: { PATH: process.env.PATH, HOME: process.env.HOME, TMPDIR: process.env.TMPDIR,
+        NODE_PATH: path.join(projectRoot, "node_modules"), REPROLENS_TARGET_URL: `${origin}/demo/eval/blur?fixed=${fixed ? 1 : 0}`, PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath }
     }, error => resolve(error ? typeof error.code === "number" ? error.code : null : 0));
   });
   try { return classifyReplay(JSON.parse(await fs.readFile(reportPath, "utf8")), exitCode, fixed, failureLine); }

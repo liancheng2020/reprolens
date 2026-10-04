@@ -26,11 +26,17 @@ UI 检查中的“无遮挡”指目标边界在视口内、中心命中目标�
 ## 可选配置
 
 - **模型**：复制 `.env.example` 为 `.env`，填写 `DEEPSEEK_API_KEY` 后重启。已有 `.env` 不要覆盖。macOS / Linux 可用 `cp .env.example .env`，PowerShell 可用 `Copy-Item .env.example .env`。
+
+`DEEPSEEK_MODEL` 必须是配置服务端当前可用的模型 ID；示例默认 `deepseek-flash`，不自动猜测或切换模型。`MODEL_NOT_FOUND` 时核对模型列表，`MODEL_AUTH_FAILED` 检查 Key/权限，`MODEL_RATE_LIMITED` 稍后重试，`OUTPUT_TRUNCATED` 表示输出不能直接执行。模板降级不是成功规划。
+
+其他配置：
 - **页面观察**：生成计划前单独授权。origin 白名单包含端口；配置及限制见 [页面观察说明](#页面观察)。
 - **质量扫描**：API 省略 `qualityScan` 或传 `false` 时不执行，传 `true` 才启用。`qualityGate.enabled` 只控制已开启扫描的门禁，不会自动开启扫描。未扫描不等于质量满分或零问题。
 - **GitHub**：本地回写需要 `REPROLENS_GITHUB_TOKEN`；配置见 [仓库配置](../.github/reprolens.yml) 和 [工作流](../.github/workflows/reprolens.yml)。未确认计划的任务不能证明目标问题。
 
 Console / Network 错误始终作为辅助线索保留，不直接决定目标 Bug 是否复现。
+
+服务重启后，未完成任务会被标记“执行已中断”，不自动重放；检查已有证据并重新确认执行。辅助整页截图失败不会抹掉已采集的步骤证据；缺图时不能提供像素对照，但仍可依据完整步骤检查业务修复。
 
 ## 页面观察
 
@@ -64,6 +70,10 @@ npm run eval:full
 ```
 
 执行器评测无需 Key，CLI 启动隔离演示服务；完整用例、指标口径见 [评测说明](VALIDATION.md)。真实模型对照使用 `npm run eval:model`，需要有效 Key 并产生 API 调用费用，见 [模型对照说明](VALIDATION.md#model-evaluation)。
+
+面试版本的小规模模型验证运行 `npm run eval:interview`：最多 10 次生成，不自动重试，结果写入 `artifacts/interview-eval-<uuid>/`；成功需候选覆盖预期且同计划在双版本产生正确结果，任何一条失败返回非零。它会消耗 API 额度，不纳入 `npm run check` 或日常 CI；详情与限制见 [当前验收记录](VALIDATION.md#最近验证结果)。使用系统 Chrome 时设置 `REPROLENS_BROWSER_CHANNEL=chrome`。
+
+演示话术、代码阅读路线与技术追问见 [面试指南](INTERVIEW.md)。
 
 ## 演示录制
 

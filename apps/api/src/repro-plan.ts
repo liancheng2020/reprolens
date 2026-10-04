@@ -50,12 +50,24 @@ export const reproPlanSchema = z.object({
 });
 
 export function draftPlan(input: CreateRunInput, errorCode?: string): ReproPlan {
+  const hints: Record<string, string> = {
+    NOT_CONFIGURED: "请配置 DEEPSEEK_API_KEY 后重启服务",
+    MODEL_NOT_FOUND: "请检查 DEEPSEEK_MODEL 和服务端可用模型列表",
+    MODEL_REQUEST_INVALID: "请求参数或配置不受支持，请检查模型名与接口地址",
+    MODEL_AUTH_FAILED: "请检查模型 Key 与权限",
+    MODEL_QUOTA_EXHAUSTED: "请检查模型服务余额或额度",
+    MODEL_RATE_LIMITED: "模型请求被限流，请稍后重试",
+    MODEL_TIMEOUT: "模型响应超时，可稍后重新生成",
+    MODEL_SERVICE_UNAVAILABLE: "模型服务暂不可用，请稍后重试",
+    OUTPUT_TRUNCATED: "模型输出被截断，不能直接执行",
+    MODEL_REFUSAL: "模型拒绝了本次规划请求"
+  };
   return {
     version: 1,
     objective: input.issue,
     scope: input.expected,
     // Single warning: states why a template is returned, how to use it, and the safety boundary.
-    warnings: [`${errorCode ? `模型规划未完成（${errorCode}），已返回待编辑模板` : "这是待编辑的安全模板"}：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。`],
+    warnings: [`${errorCode ? `模型规划未完成（${errorCode}），已返回待编辑模板${hints[errorCode] ? `；${hints[errorCode]}` : ""}` : "这是待编辑的安全模板"}：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。`],
     steps: [
       { title: "确认已到达目标页面（请编辑页面标识）", action: "assert", phase: "setup", assertion: "visible", target: { by: "text", value: "请填写目标表单标题" }, allowSideEffect: false },
       { title: "验证目标输入框的输入能力（请编辑控件）", action: "input", phase: "check", target: { by: "label", value: "请填写输入框名称" }, value: "repro-test", allowSideEffect: false }

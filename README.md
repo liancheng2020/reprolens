@@ -56,9 +56,12 @@ React / TypeScript 工作台 + Node.js / Express API + DeepSeek 规划 + Zod 校
 npm run check       # 单元测试与前后端构建
 npm run eval:smoke  # 无需 Key 的执行器冒烟验证
 npm run demo:check  # 三组固定计划：缺陷复现 -> 同计划修复验证
+npm run eval:interview # 可选：10 次真实模型规划与双版本验证，消耗模型额度
 ```
 
 通过缺陷/修复双版本检查执行与导出测试；另有小规模模型观察对照。样本结果与适用范围见 [测试与评测](docs/VALIDATION.md)。
+
+演示步骤、代码阅读入口及常见技术追问见 [面试指南](docs/INTERVIEW.md)。当前版本聚焦受控单次规划与修复闭环，不以复杂自主循环为目标。
 
 ## 使用边界
 

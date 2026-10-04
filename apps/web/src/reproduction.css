@@ -36,6 +36,7 @@
 .result-deliverable{min-width:0}.result-deliverable .code-panel{width:100%;min-width:0}
 .run-content{grid-template-columns:minmax(0,1fr)}.run-support{min-width:0}
 .result-deliverable .code-panel{height:auto;display:block}
+.result-deliverable .regression-status + .panel-heading{margin-top:20px}
 .code-panel .regression-status code{display:inline;padding:0;white-space:normal;overflow-wrap:anywhere;font-size:11px}
 .run-overview>.secondary-button{white-space:normal}
 .fix-result{border-left:3px solid #e4bd70;padding:4px 16px;margin:18px 0;min-width:0;overflow-wrap:anywhere}

@@ -1,0 +1,1826 @@
+{
+  "manifest": {
+    "datasetVersion": "interview-1",
+    "promptVersion": "observe-plan-2",
+    "model": "deepseek-flash",
+    "plannedCalls": 10,
+    "createdAt": "2026-10-04T16:33:07.094Z",
+    "node": "v24.14.1",
+    "datasetHash": "5faf76f0dbede3c75cfd1b24b4291ce893e1c53d8b23bd3b1142bc46fd2c61dd",
+    "limits": "10 synthetic development-validation cases, one attempt each, no prompt tuning; not a blind benchmark or real-site success rate"
+  },
+  "rows": [
+    {
+      "id": "blur-1",
+      "kind": "blur",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 10008,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "作者设置一"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 686
+      },
+      "plan": {
+        "version": 1,
+        "objective": "验证“显示名称”输入框可通过键盘输入，并在按 Tab 失焦后仍保留输入内容",
+        "scope": "仅覆盖作者设置页的“显示名称”输入框的键盘输入、可编辑性与失焦后取值保留",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "未验证保存/提交后的持久化、其他表单字段及任何页面质量指标，均不在本次范围内",
+          "若失焦清空由页面脚本之外的逻辑（如服务端或路由跳转）触发，本计划仅能观测输入框自身的值变化"
+        ],
+        "steps": [
+          {
+            "title": "确认进入作者设置页面",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "作者设置一",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "键盘输入显示名称并按 Tab 失焦，验证内容保留",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 2894,
+        "inputTokens": 911,
+        "outputTokens": 322,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"验证“显示名称”输入框可通过键盘输入，并在按 Tab 失焦后仍保留输入内容\",\"scope\":\"仅覆盖作者设置页的“显示名称”输入框的键盘输入、可编辑性与失焦后取值保留\",\"warnings\":[\"未验证保存/提交后的持久化、其他表单字段及任何页面质量指标，均不在本次范围内\",\"若失焦清空由页面脚本之外的逻辑（如服务端或路由跳转）触发，本计划仅能观测输入框自身的值变化\"],\"steps\":[{\"title\":\"确认进入作者设置页面\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"作者设置一\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"键盘输入显示名称并按 Tab 失焦，验证内容保留\",\"action\":\"input\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"显示名称\"},\"value\":\"repro-test\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认进入作者设置页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "作者设置一",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"作者设置一\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "键盘输入显示名称并按 Tab 失焦，验证内容保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "status": "failed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-bug/desktop-step-1-before.png",
+            "detail": "expect(locator).toHaveValue(expected) failed\n\nLocator:  getByLabel('显示名称', { exact: true })\nExpected: \"repro-test\"\nReceived: \"\"\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.have.value\" with timeout 4000ms\n  - waiting for getByLabel('显示名称', { exact: true })\n    12 × locator resolved to <input id=\"field\"/>\n       - unexpected value \"\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-bug/desktop-step-1-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认进入作者设置页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "作者设置一",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"作者设置一\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "键盘输入显示名称并按 Tab 失焦，验证内容保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "status": "passed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-1-fixed/desktop-step-1-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "blur-2",
+      "kind": "blur",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 11147,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "作者设置二"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 693
+      },
+      "plan": {
+        "version": 1,
+        "objective": "复现「公开称呼」输入框在键盘输入后按 Tab 失焦内容被清空的问题",
+        "scope": "仅验证作者设置二页面中「公开称呼」输入框的键盘可编辑性与失焦后输入保留",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "观察数据仅提供首屏定位信息，未包含任何交互结果；本计划不假设任何未被观察到的页面行为。",
+          "不验证页面视觉设计、其他字段、保存/提交结果，也不点击任何提交或发送类按钮。",
+          "若页面标题或输入框标签与观察不一致，定位将失败，属于超出本次范围的情况。",
+          "测试数据为合成数据，不涉及真实凭据或个人隐私。"
+        ],
+        "steps": [
+          {
+            "title": "确认打开「作者设置二」页面",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "作者设置二",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "在「公开称呼」中输入并验证 Tab 失焦后内容保留",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 4038,
+        "inputTokens": 911,
+        "outputTokens": 449,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"复现「公开称呼」输入框在键盘输入后按 Tab 失焦内容被清空的问题\",\"scope\":\"仅验证作者设置二页面中「公开称呼」输入框的键盘可编辑性与失焦后输入保留\",\"warnings\":[\"观察数据仅提供首屏定位信息，未包含任何交互结果；本计划不假设任何未被观察到的页面行为。\",\"不验证页面视觉设计、其他字段、保存/提交结果，也不点击任何提交或发送类按钮。\",\"若页面标题或输入框标签与观察不一致，定位将失败，属于超出本次范围的情况。\",\"测试数据为合成数据，不涉及真实凭据或个人隐私。\"],\"steps\":[{\"title\":\"确认打开「作者设置二」页面\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"作者设置二\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"在「公开称呼」中输入并验证 Tab 失焦后内容保留\",\"action\":\"input\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"公开称呼\"},\"value\":\"repro-test\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认打开「作者设置二」页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "作者设置二",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"作者设置二\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "在「公开称呼」中输入并验证 Tab 失焦后内容保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "failed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-bug/desktop-step-1-before.png",
+            "detail": "expect(locator).toHaveValue(expected) failed\n\nLocator:  getByLabel('公开称呼', { exact: true })\nExpected: \"repro-test\"\nReceived: \"\"\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.have.value\" with timeout 4000ms\n  - waiting for getByLabel('公开称呼', { exact: true })\n    12 × locator resolved to <input id=\"field\"/>\n       - unexpected value \"\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-bug/desktop-step-1-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认打开「作者设置二」页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "作者设置二",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"作者设置二\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "在「公开称呼」中输入并验证 Tab 失焦后内容保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "passed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/blur-2-fixed/desktop-step-1-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "disabled-1",
+      "kind": "disabled",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 10309,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "配送资料一"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "disabled": true,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 707
+      },
+      "plan": {
+        "version": 1,
+        "objective": "验证“显示名称”输入框可通过键盘正常输入，并在 Tab 失焦后保留输入内容（针对其被意外禁用的报告）",
+        "scope": "仅覆盖 http://127.0.0.1:49350/disabled-1 初始页面中“显示名称”输入框的可编辑性与失焦后的值保留；不涉及提交、保存、其他字段或后续流程",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "观察到的初始页面元数据显示“显示名称”输入框 disabled=true。该状态与用户预期相矛盾，本计划按用户预期保留“可编辑”这一核心判定，不将其降级为前置条件。",
+          "输入框中填入的 \"repro-test\" 为合成测试数据，不含任何真实凭据或个人信息。",
+          "不执行提交、保存、短信或任何外部副作用操作；仅验证输入与失焦保留。",
+          "未覆盖目标元素是否被遮挡（unobscured）的判定；如需排查视觉遮挡，请另行说明。",
+          "未覆盖提交后数据持久化、校验错误提示、其他表单字段等其他期望，均超出本次范围。"
+        ],
+        "steps": [
+          {
+            "title": "确认已进入配送资料一页面",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "配送资料一",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "在“显示名称”输入框键入合成文本并验证可编辑与失焦保留",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 4004,
+        "inputTokens": 905,
+        "outputTokens": 566,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"验证“显示名称”输入框可通过键盘正常输入，并在 Tab 失焦后保留输入内容（针对其被意外禁用的报告）\",\"scope\":\"仅覆盖 http://127.0.0.1:49350/disabled-1 初始页面中“显示名称”输入框的可编辑性与失焦后的值保留；不涉及提交、保存、其他字段或后续流程\",\"warnings\":[\"观察到的初始页面元数据显示“显示名称”输入框 disabled=true。该状态与用户预期相矛盾，本计划按用户预期保留“可编辑”这一核心判定，不将其降级为前置条件。\",\"输入框中填入的 \\\"repro-test\\\" 为合成测试数据，不含任何真实凭据或个人信息。\",\"不执行提交、保存、短信或任何外部副作用操作；仅验证输入与失焦保留。\",\"未覆盖目标元素是否被遮挡（unobscured）的判定；如需排查视觉遮挡，请另行说明。\",\"未覆盖提交后数据持久化、校验错误提示、其他表单字段等其他期望，均超出本次范围。\"],\"steps\":[{\"title\":\"确认已进入配送资料一页面\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"配送资料一\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"在“显示名称”输入框键入合成文本并验证可编辑与失焦保留\",\"action\":\"input\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"显示名称\"},\"value\":\"repro-test\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认已进入配送资料一页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "配送资料一",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"配送资料一\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "在“显示名称”输入框键入合成文本并验证可编辑与失焦保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "status": "failed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":true,\"readonly\":false,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-bug/desktop-step-1-before.png",
+            "detail": "expect(locator).toBeEnabled() failed\n\nLocator:  getByLabel('显示名称', { exact: true })\nExpected: enabled\nReceived: disabled\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.enabled\" with timeout 4000ms\n  - waiting for getByLabel('显示名称', { exact: true })\n    12 × locator resolved to <input disabled id=\"field\"/>\n       - unexpected value \"disabled\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-bug/desktop-step-1-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认已进入配送资料一页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "配送资料一",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"配送资料一\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "在“显示名称”输入框键入合成文本并验证可编辑与失焦保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "status": "passed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-1-fixed/desktop-step-1-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "disabled-2",
+      "kind": "disabled",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 9806,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "配送资料二"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "disabled": true,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 666
+      },
+      "plan": {
+        "version": 1,
+        "objective": "验证「公开称呼」输入框可通过键盘编辑，且按 Tab 失焦后仍保留输入内容",
+        "scope": "仅限该页面「公开称呼」单个输入框的可编辑性与失焦保留行为",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "观察元数据显示该输入框当前为 disabled=true，与报告描述的预期「可编辑」相矛盾，此处按用户预期进行验证，不降低检查强度。",
+          "报告中的「名称输入框」与观察到的标签「公开称呼」可能为同一字段，若实际页面存在多个名称类字段，本次仅覆盖该标签对应的输入框。",
+          "观察仅为初始页面定位信息，未包含任何交互结果；本计划不预设输入框的可编辑性结论。",
+          "页面其他字段、表单提交、注册/短信等外部副作用均不在范围内。",
+          "输入内容为合成测试数据，仅用于验证编辑与保留行为。"
+        ],
+        "steps": [
+          {
+            "title": "确认进入配送资料二场景",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "配送资料二",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证公开称呼输入框可键盘输入并在失焦后保留",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 3568,
+        "inputTokens": 905,
+        "outputTokens": 506,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"验证「公开称呼」输入框可通过键盘编辑，且按 Tab 失焦后仍保留输入内容\",\"scope\":\"仅限该页面「公开称呼」单个输入框的可编辑性与失焦保留行为\",\"warnings\":[\"观察元数据显示该输入框当前为 disabled=true，与报告描述的预期「可编辑」相矛盾，此处按用户预期进行验证，不降低检查强度。\",\"报告中的「名称输入框」与观察到的标签「公开称呼」可能为同一字段，若实际页面存在多个名称类字段，本次仅覆盖该标签对应的输入框。\",\"观察仅为初始页面定位信息，未包含任何交互结果；本计划不预设输入框的可编辑性结论。\",\"页面其他字段、表单提交、注册/短信等外部副作用均不在范围内。\",\"输入内容为合成测试数据，仅用于验证编辑与保留行为。\"],\"steps\":[{\"title\":\"确认进入配送资料二场景\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"配送资料二\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"验证公开称呼输入框可键盘输入并在失焦后保留\",\"action\":\"input\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"公开称呼\"},\"value\":\"repro-test\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认进入配送资料二场景",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "配送资料二",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"配送资料二\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "验证公开称呼输入框可键盘输入并在失焦后保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "failed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":true,\"readonly\":false,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-bug/desktop-step-1-before.png",
+            "detail": "expect(locator).toBeEnabled() failed\n\nLocator:  getByLabel('公开称呼', { exact: true })\nExpected: enabled\nReceived: disabled\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.enabled\" with timeout 4000ms\n  - waiting for getByLabel('公开称呼', { exact: true })\n    12 × locator resolved to <input disabled id=\"field\"/>\n       - unexpected value \"disabled\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-bug/desktop-step-1-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认进入配送资料二场景",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "配送资料二",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"配送资料二\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "验证公开称呼输入框可键盘输入并在失焦后保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "passed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/disabled-2-fixed/desktop-step-1-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "readonly-1",
+      "kind": "readonly",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 11563,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "工作空间一"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "disabled": false,
+            "readonly": true
+          }
+        ],
+        "truncated": false,
+        "durationMs": 675
+      },
+      "plan": {
+        "version": 1,
+        "objective": "复现「显示名称」输入框意外只读、无法通过键盘修改的问题，并确认输入后按 Tab 失焦仍保留输入内容。",
+        "scope": "仅覆盖工作空间页面标题场景确认，以及「显示名称」输入框的键盘可编辑性、输入保留与失焦行为。",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "observation 显示「显示名称」当前 readonly=true，这与用户期望的可编辑行为相矛盾；本计划不据此放宽或改写期望，直接以真实键盘输入检验实际可编辑性。",
+          "输入步骤本身已包含键盘输入、可编辑性检查、按 Tab 失焦及输入值保留校验，不再额外添加失焦点击或重复取值检查。",
+          "不在范围内：保存/提交后服务端持久化结果、其他表单字段、页面整体视觉与质量评估、注册或短信等副作用流程。"
+        ],
+        "steps": [
+          {
+            "title": "确认当前处于工作空间一页面",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "工作空间一",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "在「显示名称」输入合成文本并验证失焦后保留",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 5247,
+        "inputTokens": 907,
+        "outputTokens": 714,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"复现「显示名称」输入框意外只读、无法通过键盘修改的问题，并确认输入后按 Tab 失焦仍保留输入内容。\",\"scope\":\"仅覆盖工作空间页面标题场景确认，以及「显示名称」输入框的键盘可编辑性、输入保留与失焦行为。\",\"warnings\":[\"observation 显示「显示名称」当前 readonly=true，这与用户期望的可编辑行为相矛盾；本计划不据此放宽或改写期望，直接以真实键盘输入检验实际可编辑性。\",\"输入步骤本身已包含键盘输入、可编辑性检查、按 Tab 失焦及输入值保留校验，不再额外添加失焦点击或重复取值检查。\",\"不在范围内：保存/提交后服务端持久化结果、其他表单字段、页面整体视觉与质量评估、注册或短信等副作用流程。\"],\"steps\":[{\"title\":\"确认当前处于工作空间一页面\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"工作空间一\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"在「显示名称」输入合成文本并验证失焦后保留\",\"action\":\"input\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"显示名称\"},\"value\":\"repro-test\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认当前处于工作空间一页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "工作空间一",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"工作空间一\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "在「显示名称」输入合成文本并验证失焦后保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "status": "failed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-bug/desktop-step-1-before.png",
+            "detail": "expect(locator).toBeEditable() failed\n\nLocator:  getByLabel('显示名称', { exact: true })\nExpected: editable\nReceived: readOnly\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.editable\" with timeout 4000ms\n  - waiting for getByLabel('显示名称', { exact: true })\n    12 × locator resolved to <input readonly id=\"field\"/>\n       - unexpected value \"readOnly\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-bug/desktop-step-1-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认当前处于工作空间一页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "工作空间一",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"工作空间一\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "在「显示名称」输入合成文本并验证失焦后保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "status": "passed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-1-fixed/desktop-step-1-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "readonly-2",
+      "kind": "readonly",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 11005,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "工作空间二"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "disabled": false,
+            "readonly": true
+          }
+        ],
+        "truncated": false,
+        "durationMs": 688
+      },
+      "plan": {
+        "version": 1,
+        "objective": "验证“名称输入框”可通过键盘输入编辑，并在按 Tab 失焦后保留输入内容（针对意外只读问题）。",
+        "scope": "仅限该页面名称类输入框（观察到的唯一输入框，标签为“公开称呼”）的键盘可输入、可编辑与失焦后取值保留；不含提交、保存、刷新后持久化及其他页面功能。",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "报告中的“名称输入框”与观察到的唯一输入框标签“公开称呼”名称不一致，基于初始页面证据按“公开称呼”定位；若实际指其他字段则该字段未在观察中出现，属超出范围。",
+          "观察元数据显示该输入框 readonly=true，与期望的可编辑相矛盾；本计划不会据此放宽或跳过编辑性检查。",
+          "不覆盖刷新后持久化、表单提交结果、后端保存成功与否，以及该输入框之外的页面质量或视觉设计问题。",
+          "所有输入均为合成数据，不涉及注册提交、短信、凭据、支付或删除操作。"
+        ],
+        "steps": [
+          {
+            "title": "确认目标场景已加载",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "工作空间二",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "确认名称输入框存在",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "键盘输入名称并验证失焦后保留",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 4515,
+        "inputTokens": 907,
+        "outputTokens": 557,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"验证“名称输入框”可通过键盘输入编辑，并在按 Tab 失焦后保留输入内容（针对意外只读问题）。\",\"scope\":\"仅限该页面名称类输入框（观察到的唯一输入框，标签为“公开称呼”）的键盘可输入、可编辑与失焦后取值保留；不含提交、保存、刷新后持久化及其他页面功能。\",\"warnings\":[\"报告中的“名称输入框”与观察到的唯一输入框标签“公开称呼”名称不一致，基于初始页面证据按“公开称呼”定位；若实际指其他字段则该字段未在观察中出现，属超出范围。\",\"观察元数据显示该输入框 readonly=true，与期望的可编辑相矛盾；本计划不会据此放宽或跳过编辑性检查。\",\"不覆盖刷新后持久化、表单提交结果、后端保存成功与否，以及该输入框之外的页面质量或视觉设计问题。\",\"所有输入均为合成数据，不涉及注册提交、短信、凭据、支付或删除操作。\"],\"steps\":[{\"title\":\"确认目标场景已加载\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"工作空间二\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"确认名称输入框存在\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"label\",\"value\":\"公开称呼\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"键盘输入名称并验证失焦后保留\",\"action\":\"input\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"公开称呼\"},\"value\":\"repro-test\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认目标场景已加载",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "工作空间二",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"工作空间二\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "确认名称输入框存在",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-bug/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-bug/desktop-step-1-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 2,
+            "title": "键盘输入名称并验证失焦后保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "failed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-bug/desktop-step-2-before.png",
+            "detail": "expect(locator).toBeEditable() failed\n\nLocator:  getByLabel('公开称呼', { exact: true })\nExpected: editable\nReceived: readOnly\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.be.editable\" with timeout 4000ms\n  - waiting for getByLabel('公开称呼', { exact: true })\n    12 × locator resolved to <input readonly id=\"field\"/>\n       - unexpected value \"readOnly\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-bug/desktop-step-2-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认目标场景已加载",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "工作空间二",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"工作空间二\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "确认名称输入框存在",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-fixed/desktop-step-1-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 2,
+            "title": "键盘输入名称并验证失焦后保留",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "status": "passed",
+            "expected": "输入并失焦后值等于 \"repro-test\"",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"value\":\"repro-test\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-fixed/desktop-step-2-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/readonly-2-fixed/desktop-step-2-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "counter-1",
+      "kind": "counter",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 13386,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "演示购物车"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "disabled": false,
+            "readonly": true
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "加入购物车"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 683
+      },
+      "plan": {
+        "version": 1,
+        "objective": "复现“点击一次加入购物车后，购物车数量仍为 0”的问题，验证点击一次后数量是否变为 1",
+        "scope": "仅覆盖初始数量展示与单次点击加入购物车后的数量变化；不覆盖重复点击累加、价格计算、结算流程",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 3 个元素；未操作或验证业务，仍需核对计划。",
+          "按计划约束，click 仅可用于 setup 阶段，因此“点击加入购物车”作为准备步骤，最终判定由其后的数量断言给出。",
+          "观测到“购物车数量”输入框为 readonly，属计数展示控件，本计划不进行键盘输入测试，输入保留类问题不在范围内。",
+          "多商品累加、跨页面刷新后的数量持久化、真实下单/结算等副作用场景均不在范围内；本计划不执行任何提交或支付操作。",
+          "若点击后数量断言失败，仅能说明该单次点击路径数量未更新，不能定位为前端事件绑定或后端接口的具体原因。"
+        ],
+        "steps": [
+          {
+            "title": "确认购物车演示场景",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "演示购物车",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "确认初始数量为 0",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "value": "0",
+            "assertion": "value",
+            "allowSideEffect": false
+          },
+          {
+            "title": "点击一次加入购物车按钮",
+            "action": "click",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "加入购物车",
+              "role": "button"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证点击一次后数量应为 1",
+            "action": "assert",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "value": "1",
+            "assertion": "value",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 7432,
+        "inputTokens": 940,
+        "outputTokens": 859,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"复现“点击一次加入购物车后，购物车数量仍为 0”的问题，验证点击一次后数量是否变为 1\",\"scope\":\"仅覆盖初始数量展示与单次点击加入购物车后的数量变化；不覆盖重复点击累加、价格计算、结算流程\",\"warnings\":[\"按计划约束，click 仅可用于 setup 阶段，因此“点击加入购物车”作为准备步骤，最终判定由其后的数量断言给出。\",\"观测到“购物车数量”输入框为 readonly，属计数展示控件，本计划不进行键盘输入测试，输入保留类问题不在范围内。\",\"多商品累加、跨页面刷新后的数量持久化、真实下单/结算等副作用场景均不在范围内；本计划不执行任何提交或支付操作。\",\"若点击后数量断言失败，仅能说明该单次点击路径数量未更新，不能定位为前端事件绑定或后端接口的具体原因。\"],\"steps\":[{\"title\":\"确认购物车演示场景\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"演示购物车\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"确认初始数量为 0\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"label\",\"value\":\"购物车数量\"},\"assertion\":\"value\",\"value\":\"0\",\"allowSideEffect\":false},{\"title\":\"点击一次加入购物车按钮\",\"action\":\"click\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"button\",\"value\":\"加入购物车\"},\"allowSideEffect\":false},{\"title\":\"验证点击一次后数量应为 1\",\"action\":\"assert\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"购物车数量\"},\"assertion\":\"value\",\"value\":\"1\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认购物车演示场景",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "演示购物车",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"演示购物车\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "确认初始数量为 0",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "status": "passed",
+            "expected": "value: 0",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"0\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-1-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 2,
+            "title": "点击一次加入购物车按钮",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "加入购物车",
+              "role": "button"
+            },
+            "status": "passed",
+            "expected": "完成已确认的点击动作",
+            "actual": "{\"tag\":\"BUTTON\",\"disabled\":false,\"readonly\":false,\"focused\":true,\"text\":\"加入购物车\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-2-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-2-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 3,
+            "title": "验证点击一次后数量应为 1",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "status": "failed",
+            "expected": "value: 1",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"0\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-3-before.png",
+            "detail": "expect(locator).toHaveValue(expected) failed\n\nLocator:  getByLabel('购物车数量', { exact: true })\nExpected: \"1\"\nReceived: \"0\"\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.have.value\" with timeout 4000ms\n  - waiting for getByLabel('购物车数量', { exact: true })\n    12 × locator resolved to <input readonly value=\"0\" id=\"count\"/>\n       - unexpected value \"0\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-bug/desktop-step-3-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认购物车演示场景",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "演示购物车",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"演示购物车\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "确认初始数量为 0",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "status": "passed",
+            "expected": "value: 0",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"0\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-1-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 2,
+            "title": "点击一次加入购物车按钮",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "加入购物车",
+              "role": "button"
+            },
+            "status": "passed",
+            "expected": "完成已确认的点击动作",
+            "actual": "{\"tag\":\"BUTTON\",\"disabled\":false,\"readonly\":false,\"focused\":true,\"text\":\"加入购物车\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-2-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-2-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 3,
+            "title": "验证点击一次后数量应为 1",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "status": "passed",
+            "expected": "value: 1",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"1\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-3-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-1-fixed/desktop-step-3-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "counter-2",
+      "kind": "counter",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 11337,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "收藏清单"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "disabled": false,
+            "readonly": true
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "收藏"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 754
+      },
+      "plan": {
+        "version": 1,
+        "objective": "复现“点击一次收藏按钮后收藏数量仍为 0”的问题，并验证期望行为：初始为 0，点击一次后应变为 1",
+        "scope": "仅覆盖 /counter-2 页面上收藏按钮的单次点击与收藏数量显示值变化，不涉及持久化、刷新后保留或网络请求",
+        "warnings": [
+          "已观察 desktop 初始页面，提取 3 个元素；未操作或验证业务，仍需核对计划。",
+          "观察到的“收藏数量”输入框为 readonly，因此无法用键盘输入方式验证数量，本计划只能用断言读取其显示值",
+          "本计划不验证数据持久化、接口响应或刷新后计数是否保留，这些超出范围",
+          "若页面初始数量本身不为 0，则第 2 步会直接失败，需重新确认真实初始状态",
+          "无法确认“收藏”按钮是否存在重复点击、防抖或异步延迟逻辑，本计划不覆盖多次点击或延迟等待场景"
+        ],
+        "steps": [
+          {
+            "title": "确认进入收藏清单页面",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "收藏清单",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "确认初始收藏数量为 0",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "value": "0",
+            "assertion": "value",
+            "allowSideEffect": false
+          },
+          {
+            "title": "点击一次收藏按钮",
+            "action": "click",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "收藏",
+              "role": "button"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证收藏数量应变为 1",
+            "action": "assert",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "value": "1",
+            "assertion": "value",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 5479,
+        "inputTokens": 933,
+        "outputTokens": 809,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"复现“点击一次收藏按钮后收藏数量仍为 0”的问题，并验证期望行为：初始为 0，点击一次后应变为 1\",\"scope\":\"仅覆盖 /counter-2 页面上收藏按钮的单次点击与收藏数量显示值变化，不涉及持久化、刷新后保留或网络请求\",\"warnings\":[\"观察到的“收藏数量”输入框为 readonly，因此无法用键盘输入方式验证数量，本计划只能用断言读取其显示值\",\"本计划不验证数据持久化、接口响应或刷新后计数是否保留，这些超出范围\",\"若页面初始数量本身不为 0，则第 2 步会直接失败，需重新确认真实初始状态\",\"无法确认“收藏”按钮是否存在重复点击、防抖或异步延迟逻辑，本计划不覆盖多次点击或延迟等待场景\"],\"steps\":[{\"title\":\"确认进入收藏清单页面\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"收藏清单\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"确认初始收藏数量为 0\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"label\",\"value\":\"收藏数量\"},\"value\":\"0\",\"assertion\":\"value\",\"allowSideEffect\":false},{\"title\":\"点击一次收藏按钮\",\"action\":\"click\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"button\",\"value\":\"收藏\"},\"allowSideEffect\":false},{\"title\":\"验证收藏数量应变为 1\",\"action\":\"assert\",\"phase\":\"check\",\"target\":{\"by\":\"label\",\"value\":\"收藏数量\"},\"value\":\"1\",\"assertion\":\"value\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认进入收藏清单页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "收藏清单",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"收藏清单\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "确认初始收藏数量为 0",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "status": "passed",
+            "expected": "value: 0",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"0\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-1-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 2,
+            "title": "点击一次收藏按钮",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "收藏",
+              "role": "button"
+            },
+            "status": "passed",
+            "expected": "完成已确认的点击动作",
+            "actual": "{\"tag\":\"BUTTON\",\"disabled\":false,\"readonly\":false,\"focused\":true,\"text\":\"收藏\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-2-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-2-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 3,
+            "title": "验证收藏数量应变为 1",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "status": "failed",
+            "expected": "value: 1",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"0\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-3-before.png",
+            "detail": "expect(locator).toHaveValue(expected) failed\n\nLocator:  getByLabel('收藏数量', { exact: true })\nExpected: \"1\"\nReceived: \"0\"\nTimeout:  4000ms\n\nCall log:\n  - Expect \"to.have.value\" with timeout 4000ms\n  - waiting for getByLabel('收藏数量', { exact: true })\n    12 × locator resolved to <input readonly value=\"0\" id=\"count\"/>\n       - unexpected value \"0\"\n",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-bug/desktop-step-3-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "desktop",
+            "index": 0,
+            "title": "确认进入收藏清单页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "收藏清单",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"收藏清单\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-0-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 1,
+            "title": "确认初始收藏数量为 0",
+            "phase": "setup",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "status": "passed",
+            "expected": "value: 0",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"0\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-1-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 2,
+            "title": "点击一次收藏按钮",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "收藏",
+              "role": "button"
+            },
+            "status": "passed",
+            "expected": "完成已确认的点击动作",
+            "actual": "{\"tag\":\"BUTTON\",\"disabled\":false,\"readonly\":false,\"focused\":true,\"text\":\"收藏\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-2-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-2-after.png"
+          },
+          {
+            "device": "desktop",
+            "index": 3,
+            "title": "验证收藏数量应变为 1",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "status": "passed",
+            "expected": "value: 1",
+            "actual": "{\"tag\":\"INPUT\",\"disabled\":false,\"readonly\":true,\"focused\":false,\"value\":\"1\",\"text\":\"\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-3-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/counter-2-fixed/desktop-step-3-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "obstruction-1",
+      "kind": "obstruction",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 12491,
+      "observation": {
+        "version": 1,
+        "device": "iphone13",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "资料确认"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "确定"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 715
+      },
+      "plan": {
+        "version": 1,
+        "objective": "验证手机页面（iPhone 13 视口）底部工具栏是否遮挡“资料确认”页面中的“确定”按钮",
+        "scope": "仅针对资料确认页面，“确定”按钮是否完整位于视口内且中心可接收指针点击",
+        "warnings": [
+          "已观察 iphone13 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "本计划仅验证“确定”按钮是否被底部工具栏遮挡（unobscured 断言检查整体边界框在视口内且中心命中指针），不评估视觉设计、滚动行为或工具栏的动态显示逻辑。",
+          "未观察交互后的实际遮挡结果；若按钮因页面滚动位置而不在视口内，unobscured 断言也可能失败，本计划无法区分是遮挡还是滚动位置导致。",
+          "不执行任何提交、注册、短信或外部消息操作，所有数据为合成数据。"
+        ],
+        "steps": [
+          {
+            "title": "确认处于资料确认页面",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "资料确认",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证确定按钮未被底部工具栏遮挡",
+            "action": "assert",
+            "phase": "check",
+            "target": {
+              "by": "role",
+              "value": "确定",
+              "role": "button"
+            },
+            "assertion": "unobscured",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 6888,
+        "inputTokens": 910,
+        "outputTokens": 1147,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"验证手机页面（iPhone 13 视口）底部工具栏是否遮挡“资料确认”页面中的“确定”按钮\",\"scope\":\"仅针对资料确认页面，“确定”按钮是否完整位于视口内且中心可接收指针点击\",\"warnings\":[\"本计划仅验证“确定”按钮是否被底部工具栏遮挡（unobscured 断言检查整体边界框在视口内且中心命中指针），不评估视觉设计、滚动行为或工具栏的动态显示逻辑。\",\"未观察交互后的实际遮挡结果；若按钮因页面滚动位置而不在视口内，unobscured 断言也可能失败，本计划无法区分是遮挡还是滚动位置导致。\",\"不执行任何提交、注册、短信或外部消息操作，所有数据为合成数据。\"],\"steps\":[{\"title\":\"确认处于资料确认页面\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"资料确认\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"验证确定按钮未被底部工具栏遮挡\",\"action\":\"assert\",\"phase\":\"check\",\"target\":{\"by\":\"role\",\"role\":\"button\",\"value\":\"确定\"},\"assertion\":\"unobscured\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "iphone13",
+            "index": 0,
+            "title": "确认处于资料确认页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "资料确认",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"资料确认\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-bug/iphone13-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-bug/iphone13-step-0-after.png"
+          },
+          {
+            "device": "iphone13",
+            "index": 1,
+            "title": "验证确定按钮未被底部工具栏遮挡",
+            "phase": "check",
+            "target": {
+              "by": "role",
+              "value": "确定",
+              "role": "button"
+            },
+            "status": "failed",
+            "expected": "目标矩形完整位于视口内，且中心命中目标或其子元素",
+            "actual": "{\"clear\":false,\"inViewport\":true,\"centerClear\":false,\"bounds\":{\"x\":24,\"y\":766.40625,\"width\":60,\"height\":53.59375},\"viewport\":{\"width\":390,\"height\":844},\"hit\":\"nav#toolbar\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-bug/iphone13-step-1-before.png",
+            "detail": "expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\nCall Log:\n- Timeout 4000ms exceeded while waiting on the predicate",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-bug/iphone13-step-1-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "iphone13",
+            "index": 0,
+            "title": "确认处于资料确认页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "资料确认",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"资料确认\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-fixed/iphone13-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-fixed/iphone13-step-0-after.png"
+          },
+          {
+            "device": "iphone13",
+            "index": 1,
+            "title": "验证确定按钮未被底部工具栏遮挡",
+            "phase": "check",
+            "target": {
+              "by": "role",
+              "value": "确定",
+              "role": "button"
+            },
+            "status": "passed",
+            "expected": "目标矩形完整位于视口内，且中心命中目标或其子元素",
+            "actual": "{\"clear\":true,\"inViewport\":true,\"centerClear\":true,\"bounds\":{\"x\":24,\"y\":766.40625,\"width\":60,\"height\":53.59375},\"viewport\":{\"width\":390,\"height\":844},\"hit\":\"button#confirm\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-fixed/iphone13-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-1-fixed/iphone13-step-1-after.png"
+          }
+        ]
+      }
+    },
+    {
+      "id": "obstruction-2",
+      "kind": "obstruction",
+      "schemaValid": true,
+      "executable": true,
+      "oracleCovered": true,
+      "pairedPassed": true,
+      "durationMs": 10557,
+      "observation": {
+        "version": 1,
+        "device": "iphone13",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "偏好确认"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "确定"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 646
+      },
+      "plan": {
+        "version": 1,
+        "objective": "验证手机页面底部工具栏是否遮挡“确定”按钮，使按钮完整位于视口内且中心可接收指针点击",
+        "scope": "仅覆盖 /obstruction-2 初始页面上“确定”按钮的视口内完整性与中心可点击性，不涉及点击后的跳转、请求或底部工具栏自身样式",
+        "warnings": [
+          "已观察 iphone13 初始页面，提取 2 个元素；未操作或验证业务，仍需核对计划。",
+          "仅验证遮挡问题，不验证点击“确定”后的行为、网络请求或状态变更",
+          "不验证底部工具栏的视觉设计、层级样式或其余页面元素质量",
+          "若按钮位于滚动区域之外，需先滚动才能使整个包围盒进入视口，本计划不包含滚动步骤，因此该情况可能被判为未通过",
+          "设备视口按观察中的 iphone13 假设，不覆盖其它机型或横竖屏切换",
+          "输入框中未提供底部工具栏元素定位，工具栏本身不作为断言目标"
+        ],
+        "steps": [
+          {
+            "title": "确认已打开偏好确认页面",
+            "action": "assert",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "偏好确认",
+              "role": "heading"
+            },
+            "assertion": "visible",
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证确定按钮未被底部工具栏遮挡且中心可点击",
+            "action": "assert",
+            "phase": "check",
+            "target": {
+              "by": "role",
+              "value": "确定",
+              "role": "button"
+            },
+            "assertion": "unobscured",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "model",
+        "durationMs": 5169,
+        "inputTokens": 910,
+        "outputTokens": 584,
+        "finishReason": "stop",
+        "modelOutput": "{\"version\":1,\"objective\":\"验证手机页面底部工具栏是否遮挡“确定”按钮，使按钮完整位于视口内且中心可接收指针点击\",\"scope\":\"仅覆盖 /obstruction-2 初始页面上“确定”按钮的视口内完整性与中心可点击性，不涉及点击后的跳转、请求或底部工具栏自身样式\",\"warnings\":[\"仅验证遮挡问题，不验证点击“确定”后的行为、网络请求或状态变更\",\"不验证底部工具栏的视觉设计、层级样式或其余页面元素质量\",\"若按钮位于滚动区域之外，需先滚动才能使整个包围盒进入视口，本计划不包含滚动步骤，因此该情况可能被判为未通过\",\"设备视口按观察中的 iphone13 假设，不覆盖其它机型或横竖屏切换\",\"输入框中未提供底部工具栏元素定位，工具栏本身不作为断言目标\"],\"steps\":[{\"title\":\"确认已打开偏好确认页面\",\"action\":\"assert\",\"phase\":\"setup\",\"target\":{\"by\":\"role\",\"role\":\"heading\",\"value\":\"偏好确认\"},\"assertion\":\"visible\",\"allowSideEffect\":false},{\"title\":\"验证确定按钮未被底部工具栏遮挡且中心可点击\",\"action\":\"assert\",\"phase\":\"check\",\"target\":{\"by\":\"role\",\"role\":\"button\",\"value\":\"确定\"},\"assertion\":\"unobscured\",\"allowSideEffect\":false}]}"
+      },
+      "bug": {
+        "verdict": "reproduced",
+        "steps": [
+          {
+            "device": "iphone13",
+            "index": 0,
+            "title": "确认已打开偏好确认页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "偏好确认",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"偏好确认\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-bug/iphone13-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-bug/iphone13-step-0-after.png"
+          },
+          {
+            "device": "iphone13",
+            "index": 1,
+            "title": "验证确定按钮未被底部工具栏遮挡且中心可点击",
+            "phase": "check",
+            "target": {
+              "by": "role",
+              "value": "确定",
+              "role": "button"
+            },
+            "status": "failed",
+            "expected": "目标矩形完整位于视口内，且中心命中目标或其子元素",
+            "actual": "{\"clear\":false,\"inViewport\":true,\"centerClear\":false,\"bounds\":{\"x\":24,\"y\":766.40625,\"width\":60,\"height\":53.59375},\"viewport\":{\"width\":390,\"height\":844},\"hit\":\"nav#toolbar\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-bug/iphone13-step-1-before.png",
+            "detail": "expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\nCall Log:\n- Timeout 4000ms exceeded while waiting on the predicate",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-bug/iphone13-step-1-after.png"
+          }
+        ]
+      },
+      "fixed": {
+        "verdict": "not_reproduced",
+        "steps": [
+          {
+            "device": "iphone13",
+            "index": 0,
+            "title": "确认已打开偏好确认页面",
+            "phase": "setup",
+            "target": {
+              "by": "role",
+              "value": "偏好确认",
+              "role": "heading"
+            },
+            "status": "passed",
+            "expected": "visible: true",
+            "actual": "{\"tag\":\"H1\",\"disabled\":false,\"readonly\":false,\"focused\":false,\"text\":\"偏好确认\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-fixed/iphone13-step-0-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-fixed/iphone13-step-0-after.png"
+          },
+          {
+            "device": "iphone13",
+            "index": 1,
+            "title": "验证确定按钮未被底部工具栏遮挡且中心可点击",
+            "phase": "check",
+            "target": {
+              "by": "role",
+              "value": "确定",
+              "role": "button"
+            },
+            "status": "passed",
+            "expected": "目标矩形完整位于视口内，且中心命中目标或其子元素",
+            "actual": "{\"clear\":true,\"inViewport\":true,\"centerClear\":true,\"bounds\":{\"x\":24,\"y\":766.40625,\"width\":60,\"height\":53.59375},\"viewport\":{\"width\":390,\"height\":844},\"hit\":\"button#confirm\"}",
+            "beforeUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-fixed/iphone13-step-1-before.png",
+            "afterUrl": "/artifacts/interview-eval-74d0215c-0e16-4646-bb94-b6b4012b30f8/obstruction-2-fixed/iphone13-step-1-after.png"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "schemaValidRate": 1,
+    "oracleCoveredRate": 1,
+    "executableRate": 1,
+    "pairedPassed": 10,
+    "pairedPassRate": 1,
+    "averageMs": 11161,
+    "inputTokens": 9139,
+    "outputTokens": 6513,
+    "cost": null
+  }
+}

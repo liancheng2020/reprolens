@@ -23,6 +23,11 @@ export const devices: Record<DeviceName, { label: string; width: number; height:
   pixel7: { label: "Pixel 7", width: 412, height: 915 }
 };
 
+export async function optionalCapture(capture: () => Promise<void>, warn: (detail: string) => Promise<void>): Promise<boolean> {
+  try { await capture(); return true; }
+  catch { await warn("操作后整页截图不可用；已采集的步骤证据与业务结论仍保留。"); return false; }
+}
+
 interface ScannerCallbacks {
   evidence?(evidence: StepEvidence): Promise<void>;
   step(title: string, detail?: string): Promise<void>;
@@ -238,7 +243,7 @@ export class BrowserScanner {
     }
 
     await callbacks.step("启动隔离浏览器", "Chromium / Playwright");
-    const browser = await chromium.launch({ headless: config.headless, channel: config.browserChannel });
+    const browser = await chromium.launch({ headless: config.headless, channel: config.browserChannel, timeout: 10_000 });
 
     try {
       for (const deviceName of input.devices) {
@@ -247,7 +252,14 @@ export class BrowserScanner {
         const context = await browser.newContext({
           viewport: { width: device.width, height: device.height },
           deviceScaleFactor: 1,
-          colorScheme: "dark"
+          colorScheme: "dark",
+          serviceWorkers: "block",
+          acceptDownloads: false
+        });
+        const origin = new URL(input.url).origin;
+        await context.route("**/*", route => {
+          const request = route.request();
+          return request.isNavigationRequest() && new URL(request.url()).origin !== origin ? route.abort() : route.continue();
         });
         const page = await context.newPage();
         if (input.qualityScan) await installPerformanceObservers(page);
@@ -263,6 +275,7 @@ export class BrowserScanner {
         });
 
         await page.goto(input.url, { waitUntil: "domcontentloaded", timeout: 25_000 });
+        if (new URL(page.url()).origin !== origin) throw new Error("页面已离开已授权站点，停止执行");
         await page.waitForTimeout(350);
         await callbacks.step("执行已确认的业务复现计划", input.plan.objective);
         evidence.push(...await executePlan(page, input.plan, deviceName, artifactDir, runId, async (item) => {
@@ -271,7 +284,10 @@ export class BrowserScanner {
         await page.waitForTimeout(300);
 
         const filename = `${deviceName}.png`;
-        await page.screenshot({ path: path.join(artifactDir, filename), fullPage: true, mask: [page.locator('input[type="password"]')], timeout: 4000 });
+        const captured = await optionalCapture(
+          () => page.screenshot({ path: path.join(artifactDir, filename), fullPage: true, mask: [page.locator('input[type="password"]')], timeout: 4000 }).then(() => {}),
+          detail => callbacks.step("辅助截图不可用", detail)
+        );
         const screenshot: ScreenshotArtifact = {
           id: `${runId}-${deviceName}`,
           label: `${device.label} · 操作后`,
@@ -279,8 +295,10 @@ export class BrowserScanner {
           viewport: { width: device.width, height: device.height },
           url: `/artifacts/${runId}/${filename}`
         };
-        screenshots.push(screenshot);
-        await callbacks.screenshot(screenshot);
+        if (captured) {
+          screenshots.push(screenshot);
+          await callbacks.screenshot(screenshot);
+        }
 
         const audit: AuditSnapshot = input.qualityScan
           ? await auditPage(page, deviceName, consoleErrors, networkErrors, pageErrors)

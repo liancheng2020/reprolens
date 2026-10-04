@@ -33,4 +33,8 @@ describe("planning provenance", () => {
     expect(record.source).toBe("template");
     expect(record.trace?.errorCode).toBe("INVALID_JSON");
   });
+  it("rejects false fixed-demo provenance for another problem or page", () => {
+    expect(() => planningForRun({ ...input, demoId: demo.id, url: "http://localhost/other" })).toThrow();
+    expect(() => planningForRun({ ...input, demoId: demo.id, issue: "different problem" })).toThrow();
+  });
 });

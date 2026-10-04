@@ -1,0 +1,818 @@
+{
+  "manifest": {
+    "datasetVersion": "interview-1",
+    "promptVersion": "observe-plan-2",
+    "model": "deepseek-v4.1-flash",
+    "plannedCalls": 10,
+    "createdAt": "2026-10-04T16:27:47.125Z",
+    "node": "v24.14.1",
+    "datasetHash": "5faf76f0dbede3c75cfd1b24b4291ce893e1c53d8b23bd3b1142bc46fd2c61dd",
+    "limits": "10 synthetic development-validation cases, one attempt each, no prompt tuning; not a blind benchmark or real-site success rate"
+  },
+  "rows": [
+    {
+      "id": "blur-1",
+      "kind": "blur",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 2486,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "作者设置一"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 829
+      },
+      "plan": {
+        "version": 1,
+        "objective": "输入名称后按 Tab 离开输入框，内容被清空。",
+        "scope": "名称输入框可通过键盘编辑，按 Tab 失焦后仍保留刚才的输入。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 1442,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "blur-2",
+      "kind": "blur",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1164,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "作者设置二"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 680
+      },
+      "plan": {
+        "version": 1,
+        "objective": "输入名称后按 Tab 离开输入框，内容被清空。",
+        "scope": "名称输入框可通过键盘编辑，按 Tab 失焦后仍保留刚才的输入。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 289,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "disabled-1",
+      "kind": "disabled",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1162,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "配送资料一"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "disabled": true,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 686
+      },
+      "plan": {
+        "version": 1,
+        "objective": "名称输入框意外禁用，不能输入。",
+        "scope": "名称输入框可通过键盘编辑，按 Tab 失焦后仍保留刚才的输入。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 292,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "disabled-2",
+      "kind": "disabled",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1246,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "配送资料二"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "disabled": true,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 751
+      },
+      "plan": {
+        "version": 1,
+        "objective": "名称输入框意外禁用，不能输入。",
+        "scope": "名称输入框可通过键盘编辑，按 Tab 失焦后仍保留刚才的输入。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 301,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "readonly-1",
+      "kind": "readonly",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1166,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "工作空间一"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "显示名称"
+            },
+            "disabled": false,
+            "readonly": true
+          }
+        ],
+        "truncated": false,
+        "durationMs": 699
+      },
+      "plan": {
+        "version": 1,
+        "objective": "名称输入框意外只读，无法修改。",
+        "scope": "名称输入框可通过键盘编辑，按 Tab 失焦后仍保留刚才的输入。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 294,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "readonly-2",
+      "kind": "readonly",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1159,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "工作空间二"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "公开称呼"
+            },
+            "disabled": false,
+            "readonly": true
+          }
+        ],
+        "truncated": false,
+        "durationMs": 674
+      },
+      "plan": {
+        "version": 1,
+        "objective": "名称输入框意外只读，无法修改。",
+        "scope": "名称输入框可通过键盘编辑，按 Tab 失焦后仍保留刚才的输入。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 297,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "counter-1",
+      "kind": "counter",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1217,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "演示购物车"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "购物车数量"
+            },
+            "disabled": false,
+            "readonly": true
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "加入购物车"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 755
+      },
+      "plan": {
+        "version": 1,
+        "objective": "点击加入购物车一次，购物车数量仍为 0。",
+        "scope": "初始数量为 0，点击一次添加按钮后，数量应该为 1。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 292,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "counter-2",
+      "kind": "counter",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1121,
+      "observation": {
+        "version": 1,
+        "device": "desktop",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "收藏清单"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "input",
+            "target": {
+              "by": "label",
+              "value": "收藏数量"
+            },
+            "disabled": false,
+            "readonly": true
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "收藏"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 645
+      },
+      "plan": {
+        "version": 1,
+        "objective": "点击收藏一次，收藏数量仍为 0。",
+        "scope": "初始数量为 0，点击一次添加按钮后，数量应该为 1。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 296,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "obstruction-1",
+      "kind": "obstruction",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1230,
+      "observation": {
+        "version": 1,
+        "device": "iphone13",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "资料确认"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "确定"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 728
+      },
+      "plan": {
+        "version": 1,
+        "objective": "手机页面底部工具栏覆盖了确定按钮。",
+        "scope": "确定按钮完整位于视口内，中心能接收到指针点击，不被底部工具栏遮挡。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 294,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    },
+    {
+      "id": "obstruction-2",
+      "kind": "obstruction",
+      "schemaValid": false,
+      "executable": false,
+      "oracleCovered": false,
+      "pairedPassed": false,
+      "durationMs": 1186,
+      "observation": {
+        "version": 1,
+        "device": "iphone13",
+        "elements": [
+          {
+            "tag": "h1",
+            "target": {
+              "by": "role",
+              "role": "heading",
+              "value": "偏好确认"
+            },
+            "disabled": false,
+            "readonly": false
+          },
+          {
+            "tag": "button",
+            "target": {
+              "by": "role",
+              "role": "button",
+              "value": "确定"
+            },
+            "disabled": false,
+            "readonly": false
+          }
+        ],
+        "truncated": false,
+        "durationMs": 712
+      },
+      "plan": {
+        "version": 1,
+        "objective": "手机页面底部工具栏覆盖了确定按钮。",
+        "scope": "确定按钮完整位于视口内，中心能接收到指针点击，不被底部工具栏遮挡。",
+        "warnings": [
+          "模型规划未完成（MODEL_REQUEST_FAILED），已返回待编辑模板：请填写准确的页面标识、目标控件与期望值。系统不会猜测入口或自动提交表单。"
+        ],
+        "steps": [
+          {
+            "title": "确认已到达目标页面（请编辑页面标识）",
+            "action": "assert",
+            "phase": "setup",
+            "assertion": "visible",
+            "target": {
+              "by": "text",
+              "value": "请填写目标表单标题"
+            },
+            "allowSideEffect": false
+          },
+          {
+            "title": "验证目标输入框的输入能力（请编辑控件）",
+            "action": "input",
+            "phase": "check",
+            "target": {
+              "by": "label",
+              "value": "请填写输入框名称"
+            },
+            "value": "repro-test",
+            "allowSideEffect": false
+          }
+        ]
+      },
+      "trace": {
+        "model": "deepseek-v4.1-flash",
+        "promptVersion": "observe-plan-2",
+        "status": "fallback",
+        "durationMs": 295,
+        "inputTokens": null,
+        "outputTokens": null,
+        "errorCode": "MODEL_REQUEST_FAILED"
+      }
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "schemaValidRate": 0,
+    "oracleCoveredRate": 0,
+    "executableRate": 0,
+    "pairedPassed": 0,
+    "pairedPassRate": 0,
+    "averageMs": 1314,
+    "inputTokens": null,
+    "outputTokens": null,
+    "cost": null
+  }
+}
